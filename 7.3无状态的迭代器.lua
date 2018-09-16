@@ -23,3 +23,7 @@ end
 -- for k, v in next, t do
 --     print(k, v)
 -- end
+
+for k, v in pairs(array) do
+    print (k,v)
+end
