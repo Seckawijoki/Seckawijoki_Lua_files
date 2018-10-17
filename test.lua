@@ -15,3 +15,5 @@ a = io.read("*number");
 c=a+c[c[i]]
 print(fact(a))
 --]==]
+
+print(gcinfo());
