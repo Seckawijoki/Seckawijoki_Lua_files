@@ -17,3 +17,14 @@ print(fact(a))
 --]==]
 
 print(gcinfo());
+
+local apiId = 300
+
+function IsAndroidBlockark()
+	return apiId == 303 or apiId == 310 or apiId == 399;
+end
+
+print(IsAndroidBlockark())
+
+facebook = not IsAndroidBlockark()
+print(facebook)
