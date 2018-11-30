@@ -1,21 +1,21 @@
 function create(name, id)
-	local data = { name = name, id = id
-}
-local obj = {}
-function obj.SetName(name)
-	data.name = name
+	local data = { name = name, id = id}
+	local obj = {}
+	function obj.SetName(name)
+		data.name = name
+	end
+	function obj.GetName()
+		return data.name
+	end
+	function obj.SetId(id)
+		data.id = id
+	end
+	function obj.GetId()
+		return data.id
+	end
+	return obj
 end
-function obj.GetName()
-	return data.name
-end
-function obj.SetId(id)
-	data.id = id
-end
-function obj.GetId()
-	return data.id
-end
-return obj
-end
+
 o1 = create("Sam", 001)
 o2 = create("Bob", 007)
 o1.SetId(100)

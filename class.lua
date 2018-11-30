@@ -14,6 +14,7 @@ function create(name, id)
 	end
 	return obj
 end
+
 o1 = create("Sam", 001)
 print("o1's name:", o1:GetName(),
 	"o1's id:", o1:GetId())
