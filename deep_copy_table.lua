@@ -126,7 +126,7 @@ local Data = {
 
 local copyData = deep_copy_table(Data)
 
-print(table.tostring(Data))
-print(table.tostring(copyData))
-print(tostring(Data))
-print(tostring(copyData))
+-- print(table.tostring(Data))
+-- print(table.tostring(copyData))
+-- print(tostring(Data))
+-- print(tostring(copyData))
