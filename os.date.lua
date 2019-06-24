@@ -33,3 +33,9 @@ end
 printAllFormatDate()
 
 print(os.clock())
+local nowtime = os.time()
+print(nowtime)
+print(os.date("%Y-%m-%d %X", nowtime))
+nowtime = nowtime + 60;
+print(nowtime)
+print(os.date("%Y-%m-%d %X", nowtime))

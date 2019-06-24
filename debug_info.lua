@@ -8,7 +8,7 @@ end
 
 local info = debug.getinfo(1, "S")
 for k, v in pairs(info) do 
-    print(k, ':', v)
+    -- print(k, ':', v)
 end
 
 local path = info.source
