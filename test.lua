@@ -92,3 +92,78 @@ qq_share = {
     content = "",
   }
 }
+
+print(#{[1]=1, [2]=2, [5]=5})
+
+
+for i=1 ,10 do
+  print(math.random(10))
+end
+
+curPlayerX = 5
+curPlayerZ = 0
+lastPlayerX = 4
+lastPlayerZ = 0
+curPlayerXInt = math.floor(curPlayerX)
+curPlayerZInt = math.floor(curPlayerZ)
+lastPlayerXInt = math.floor(lastPlayerX)
+lastPlayerZInt = math.floor(lastPlayerZ)
+selectBlockX = 6
+selectBlockZ = 0
+
+print(curPlayerZInt == lastPlayerZInt and curPlayerZInt == selectBlockZ)
+print(curPlayerX > lastPlayerX and curPlayerX < selectBlockX)
+print(curPlayerX < lastPlayerX and curPlayerX > selectBlockX)
+print(math.abs(curPlayerX - selectBlockX) >= 2)
+print(
+  (
+    curPlayerX > lastPlayerX and curPlayerX < selectBlockX --X轴正方向
+    or curPlayerX < lastPlayerX and curPlayerX > selectBlockX --或，X轴负方向
+  ) 
+)
+print(
+  (curPlayerZInt == lastPlayerZInt and curPlayerZInt == selectBlockZ) -- Z轴上
+  and (
+    curPlayerX > lastPlayerX and curPlayerX < selectBlockX --X轴正方向
+    or curPlayerX < lastPlayerX and curPlayerX > selectBlockX --或，X轴负方向
+  ) 
+)
+if not (
+  (curPlayerZInt == lastPlayerZInt and curPlayerZInt == selectBlockZ) -- Z轴上
+  and (
+    curPlayerX > lastPlayerX and curPlayerX < selectBlockX --X轴正方向
+    or curPlayerX < lastPlayerX and curPlayerX > selectBlockX --或，X轴负方向
+  ) 
+  and math.abs(curPlayerX - selectBlockX) >= 2
+  ) 
+  or not ( -- 类上
+  (curPlayerXInt == lastPlayerXInt and curPlayerXInt == selectBlockX) -- X轴上
+  and ( 
+    curPlayerZ - lastPlayerZ > 0 and curPlayerZ - selectBlockZ > 0
+    or curPlayerZ - lastPlayerZ < 0 and curPlayerZ - selectBlockZ < 0
+  )
+  and math.abs(curPlayerZ - selectBlockZ) >= 2
+  ) then 
+  print("cannot")
+end
+
+if not 1 and not 2 then 
+  print("1 and 2")
+end
+
+_G.Trigger = {
+  Block = {
+    method = function(self)
+      print("Trigger.Block:print()")
+    end
+  },
+  Area = {
+    method = function(self)
+      print("Trigger.Area:print()")
+    end
+  },
+}
+
+local class = _G["Trigger.Block"]
+print(class["method"](class))
+
