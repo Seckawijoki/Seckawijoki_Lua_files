@@ -5,7 +5,7 @@ local MapSearchType = {
 }
 
 MapSearchView = {
-    m_clsPresenter = nil,
+    mCallback = nil,
     m_btnSearch = nil,
     m_iMapSearchType = MapSearchType.AUTHOR_UIN,
     m_aSearchFunctionDispatcher = {
@@ -16,30 +16,30 @@ MapSearchView = {
 function MapSearchView:Init()
     self.m_aSearchFunctionDispatcher[MapSearchType.AUTHOR_UIN] = function()
         local uin = 204914649;
-        self.m_clsPresenter:OnRequestSearchByAuthorUin(uin, true);
+        self.mCallback:requestSearchByAuthorUin(uin, true);
     end;
 
     self.m_aSearchFunctionDispatcher[MapSearchType.AUTHOR_NAME] = function()
         local szAuthorName = "seckawijoki";
-        self.m_clsPresenter:OnRequestSearchByAuthorName(szAuthorName);
+        self.mCallback:requestSearchByAuthorName(szAuthorName);
     end;
 
     self.m_aSearchFunctionDispatcher[MapSearchType.MAP_NAME] = function()
         local szMapName = "地图名字";
-        self.m_clsPresenter:OnRequestSearchByMapName(szMapName);
+        self.mCallback:requestSearchByMapName(szMapName);
     end;
 end
 
-function MapSearchView:DisplaySearchByAuthorUin(...)
-    print("MapSearchView:DisplaySearchByAuthorUin:");
+function MapSearchView:onDisplaySearchByAuthorUin(...)
+    print("MapSearchView:onDisplaySearchByAuthorUin:");
 end
 
-function MapSearchView:DisplaySearchByAuthorName(...)
-    print("MapSearchView:DisplaySearchByAuthorName:");
+function MapSearchView:onDisplaySearchByAuthorName(...)
+    print("MapSearchView:onDisplaySearchByAuthorName:");
 end
 
-function MapSearchView:DisplaySearchByMapName(...)
-    print("MapSearchView:DisplaySearchByMapName:");
+function MapSearchView:onDisplaySearchByMapName(...)
+    print("MapSearchView:onDisplaySearchByMapName:");
 end
 
 function MapSearchView:OnGameEvent(arg1)

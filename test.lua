@@ -151,19 +151,16 @@ if not 1 and not 2 then
   print("1 and 2")
 end
 
-_G.Trigger = {
-  Block = {
-    method = function(self)
-      print("Trigger.Block:print()")
-    end
-  },
-  Area = {
-    method = function(self)
-      print("Trigger.Area:print()")
-    end
-  },
+
+_G.Android = {
+  this = Android,
+
+	SITUATION = {
+		ADVERTISEMENT_9 = "ADVERTISEMENT_9",
+	},
+
+	m_aSwitches = {
+		[this.SITUATION.ADVERTISEMENT_9] = false,
+	},
+
 }
-
-local class = _G["Trigger.Block"]
-print(class["method"](class))
-

@@ -1,28 +1,28 @@
 MapSearchModel = {
-    m_clsPresenter = nil,
+    mCallback = nil,
 };
 
 function MapSearchModel:Init()
 
 end
 
-function MapSearchModel:RequestSearchByAuthorUin(uin, boolean)
+function MapSearchModel:onRequestSearchByAuthorUin(uin, boolean)
     uin = tonumber(uin);
-    print("MapSearchModel:RequestSearchByAuthorUin: uin = ", uin);
-    print("MapSearchModel:RequestSearchByAuthorUin: boolean = ", boolean);
-    self.m_clsPresenter:OnDisplaySearchByAuthorUin();
+    print("MapSearchModel:onRequestSearchByAuthorUin: uin = ", uin);
+    print("MapSearchModel:onRequestSearchByAuthorUin: boolean = ", boolean);
+    self.mCallback:displaySearchByAuthorUin();
 end
 
-function MapSearchModel:RequestSearchByAuthorName(szAuthorName)
+function MapSearchModel:onRequestSearchByAuthorName(szAuthorName)
     szAuthorName = tostring(szAuthorName);
-    print("MapSearchModel:RequestSearchByAuthorName: szAuthorName = ", szAuthorName);
-    self.m_clsPresenter:OnDisplaySearchByAuthorName();
+    print("MapSearchModel:onRequestSearchByAuthorName: szAuthorName = ", szAuthorName);
+    self.mCallback:displaySearchByAuthorName();
 end
 
-function MapSearchModel:RequestSearchByMapName(szMapName)
+function MapSearchModel:onRequestSearchByMapName(szMapName)
     szMapName = tostring(szMapName);
-    print("MapSearchModel:RequestSearchByMapName: szMapName = ", szMapName);
-    self.m_clsPresenter:OnDisplaySearchByMapName();
+    print("MapSearchModel:onRequestSearchByMapName: szMapName = ", szMapName);
+    self.mCallback:displaySearchByMapName();
 end
 
 return MapSearchModel;
