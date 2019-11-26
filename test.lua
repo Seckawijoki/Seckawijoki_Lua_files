@@ -1,5 +1,5 @@
-require("deep_copy_table");
-
+-- require("deep_copy_table");
+require("utils/Android")
 local blMapInfo = {
   wids = {
       [3] = 102, 
@@ -151,16 +151,143 @@ if not 1 and not 2 then
   print("1 and 2")
 end
 
+-- _G.Android = {
+--   this = Android,
 
-_G.Android = {
-  this = Android,
+-- 	SITUATION = {
+-- 		ADVERTISEMENT_9 = "ADVERTISEMENT_9",
+-- 	},
 
-	SITUATION = {
-		ADVERTISEMENT_9 = "ADVERTISEMENT_9",
-	},
+-- 	m_aSwitches = {
+-- 		[this.SITUATION.ADVERTISEMENT_9] = false,
+-- 	},
 
-	m_aSwitches = {
-		[this.SITUATION.ADVERTISEMENT_9] = false,
-	},
+-- }
 
+local t = {
+  [""] = 123,
+  ["\\"] = "\\\\"
 }
+
+print(t[""])
+print(t["\\"])
+
+function onRecycle()
+  print(self.m_szClassName .. "@" .. tostring(self) .. " has no implementation of onRecycle()")
+  for k, v in pairs(self) do
+      if type(v) ~= "function" then
+          self[k] = nil
+      end
+  end
+end
+
+function newRecyclerClass(szClassName)
+  local RecyclerClass = {}
+  if not szClassName then
+    szClassName = "RecyclerClass"
+  end
+  RecyclerClass.m_bHasBeenRecycled = false
+  RecyclerClass.m_szClassName = szClassName
+  szClassName = nil
+  function RecyclerClass:recycle()
+		self.m_bHasBeenRecycled = true
+		return self
+  end
+  RecyclerClass.onRecycle = _G.onRecycle
+    -- function RecyclerClass:onRecycle()
+    --     print(self.m_szClassName .. "@" .. tostring(self) .. " has no implementation of onRecycle()")
+    --     for k, v in pairs(self) do
+    --         if type(v) ~= "function" then
+    --             self[k] = nil
+    --         end
+    --     end
+    -- end
+  return RecyclerClass
+end
+
+local r1 = newRecyclerClass();
+local r2 = newRecyclerClass();
+print("r1 = ", r1)
+for k, v in pairs(r1) do 
+  print(k, type(v), v)
+end
+print("r2 = ", r2)
+for k, v in pairs(r2) do 
+  print(k, type(v), v)
+end
+
+local t = {
+  [-1] = -1,
+  [0] = 0,
+  [1] = 1,
+  [2] = 2,
+  [3] = 3,
+  [4] = 4,
+  [5] = 5,
+  [6] = nil,
+  [7] = 7,
+  [8] = 8,
+  [9] = 9,
+  [10] = 10,
+  [11] = 11,
+  [12] = 12,
+}
+
+for k, v in pairs(t) do 
+  print(k, type(v), v)
+end
+print(t[-1])
+print(t[0])
+print(#t)
+
+Abstract = {
+  m_szClassName = "Abstract",
+
+  getClassName = function(self)
+    return self.m_szClassName
+  end,
+
+  static = function()
+    print(Abstract.m_szClassName, tostring(Abstract))
+  end
+}
+Abstract.__index = Abstract
+
+Concrete = {
+  m_szClassName = "Concrete",
+
+  __tostring = function(self)
+    return self.m_szClassName .. "@" .. tostring(self) 
+  end
+}
+
+Concrete = setmetatable(Concrete, Abstract)
+-- Concrete.__index = Concrete
+
+for k, v in pairs(Concrete) do 
+  print(k, type(v), v)
+end
+print(getmetatable(Concrete))
+print(Abstract)
+print(Concrete.static())
+print(Concrete:getClassName())
+print(Abstract.static)
+print(Concrete.static)
+
+print(i)
+
+String = {
+  m_szClassName = "String",
+
+  tostring = function()
+    return "@" .. tostring(self) 
+  end,
+}
+
+print(String)
+
+getmetatable("").__add = function(x, y) return tostring(x) .. tostring(y) end
+
+print("hello " + true + " " + 1 )
+
+print(not nil)
