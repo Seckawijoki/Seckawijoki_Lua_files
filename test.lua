@@ -291,3 +291,47 @@ getmetatable("").__add = function(x, y) return tostring(x) .. tostring(y) end
 print("hello " + true + " " + 1 )
 
 print(not nil)
+
+-- Days = [[]]
+-- print(type(Days))
+-- print(Days == nil)
+-- print(Days <= 0)
+
+function url_addParams( url_ )
+
+  local uin_ = "12"
+	local apiid_ = "nil"	
+	local ver_   = "nil"
+	local lang_  = "nil"
+	local cnty_  = "nil"
+	--for minicode
+	local channel_id = 0;
+	local production_id = 0;
+	--local headInd_ = GetHeadIconIndex() or "nil"
+
+
+	local long_url_;
+	if  string.find( url_, '%?' ) then
+		long_url_ = url_ .. '&';
+	else
+		long_url_ = url_ .. '?';
+	end
+	long_url_ = long_url_ .. "uin="      .. uin_
+	                      .. "&ver="     .. ver_
+						  .. (((channel_id > 0) and ("&channel_id="..channel_id)) or "")
+						  .. (((production_id > 0) and ("&production_id="..production_id)) or "")	                      
+						  .. "&apiid="   .. apiid_
+	                      .. "&lang="    .. lang_
+						  .. "&country=" .. cnty_
+
+
+	--增加安全
+	if  string.sub( long_url_, 1, 1 ) == 's' and string.sub( long_url_, 3, 3 ) == "_" then
+		long_url_ =  getUrlSafeInfo( long_url_ );    --增加url安全
+	end
+
+	return long_url_;
+end
+
+-- print(url_addParams(nil))
+print(url_addParams(""))

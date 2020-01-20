@@ -1,19 +1,54 @@
+local tostring = _G.tostring
+local pairs = _G.pairs
+local type = _G.type
+local getmetatable = _G.getmetatable
+local setmetatable = _G.setmetatable
+local table = _G.table
 
---------------------------------------------------------ClassesCache start----------------------------------------------------------
-_G.ClassesCache = {
-    --[[
-        根据类名映射【类名】到【类的数组】的缓存表
-    ]]
-    m_mClassArrayMap = {
-
-	},
+getmetatable("").__add = function(a, b) 
+	local x
+	local y
+	if a ~= nil then
+		if type(a) == "table" then
+			if a.toString then
+				x = a:toString();
+			else
+				x = table.tostring(a)
+			end
+		else
+			x = tostring(a)
+		end
+	else
+		x = "nil"
+	end
 	
-	AbsRecyclerClass = {
-		m_szClassName = "AbsRecyclerClass",
-		m_bHasBeenRecycled = true,
-	}
+	a = b
+	y = x
+	if a ~= nil then
+		if type(a) == "table" then
+			if a.toString then
+				x = a:toString();
+			else
+				x = table.tostring(a)
+			end
+		else
+			x = tostring(a)
+		end
+	else
+		x = "nil"
+	end
+	
+	return y .. x 
+end
+
+local AbsRecyclerClass = {
+	m_szClassName = "AbsRecyclerClass",
+	--[[
+		应当由每个类持有该变量	
+		Created on 2019-12-19 at 19:18:20
+	]]
+	-- m_bHasBeenRecycled = true,
 }
-local AbsRecyclerClass = ClassesCache.AbsRecyclerClass
 --[[
 	final
 	以回收代替附以nil的操作或默认的gc
@@ -40,10 +75,14 @@ function AbsRecyclerClass:onRecycle()
 	return self;
 end
 
+--[[
+	示例输出：
+	
+]]
 function AbsRecyclerClass:toString()
 	local s = ""
 	if self.m_szClassName then
-		s = s .. self.m_szClassName .. "@" .. tostring(self) .. ":"
+		s = s .. self.m_szClassName .. "@" .. tostring(self) .. " = {\n"
 	end
 	local pairs = pairs
 	local type = type
@@ -63,15 +102,27 @@ function AbsRecyclerClass:toString()
 	-- 2.递归
 	for k, v in pairs(class) do 
 		if k ~= "__index" and type(v) ~= "function" and type(v) ~= "userdata" then
-			s = s .. k .. " = " + v .. ", "
+			s = s .. k .. " = " + v .. ",\n"
 		end
 	end
+	s = s .. "},\n"
 	class = getmetatable(class)
 	if class then
 		s = s .. "\n" + class
 	end
 	return s
 end
+--------------------------------------------------------ClassesCache start----------------------------------------------------------
+local ClassesCache = {
+    --[[
+        根据类名映射【类名】到【类的数组】的缓存表
+    ]]
+    m_mClassArrayMap = {
+
+	},
+	AbsRecyclerClass = AbsRecyclerClass,
+}
+_G.ClassesCache = ClassesCache
 --[[
     新建可回收类
 ]]

@@ -1,12 +1,12 @@
 
 --------------------------------------------------------Android start----------------------------------------------------------
-_G.Android = {
+local Android = {
 	m_CurrentSituation = "",
 	m_szCurrentTag = "",
 	--[[
 		日志打印总的开关
 	]]
-	DEFAULT_LOG = false,
+	ALLOW_NIL_TAG = false,
 	--[[
 		PC日志开关
 	]]
@@ -17,20 +17,34 @@ _G.Android = {
 	TAGS = nil,
 	
 }
-local Android = _G.Android
+_G.Android = Android
 function Android:init()
-	self:initLogcat();
+	if self.initLogcat then
+		self:initLogcat();
+		self.initLogcat = nil
+	end
 
 	-- self.A = {
 	-- 	BB = {
 	-- 		CCC = {
 	-- 			DDDD = function(self, boolean, integer, float, double, string)
-	-- 				print("DDDD(): boolean = ", boolean);
-	-- 				print("DDDD(): integer = ", integer);
-	-- 				print("DDDD(): float = ", float);
-	-- 				print("DDDD(): double = ", double);
-	-- 				print("DDDD(): string = ", string);
-	-- 				return string .. "|lua return", double * 100, float / 2, integer -100, not boolean  
+	-- 				local print = Android:Localize(Android.SITUATION.JAVA2LUA);
+	-- 				-- print("DDDD(): boolean = " + boolean);
+	-- 				-- print("DDDD(): integer = " + integer);
+	-- 				-- print("DDDD(): float = " + float);
+	-- 				-- print("DDDD(): double = " + double);
+	-- 				-- print("DDDD(): string = " + string);
+	-- 				return string .. "|lua self function return", double * 100, float / 2, integer -100, not boolean  
+	-- 			end,
+
+	-- 			EEEEE = function(boolean, integer, float, double, string)
+	-- 				local print = Android:Localize(Android.SITUATION.JAVA2LUA);
+	-- 				-- print("EEEEE(): boolean = " + boolean);
+	-- 				-- print("EEEEE(): integer = " + integer);
+	-- 				-- print("EEEEE(): float = " + float);
+	-- 				-- print("EEEEE(): double = " + double);
+	-- 				-- print("EEEEE(): string = " + string);
+	-- 				return string .. "|lua function return", double * 100, float / 2, integer -100, not boolean  
 	-- 			end
 	-- 		},
 	-- 	},
@@ -54,6 +68,13 @@ function Android:initLogcat()
 		REDEEM_CODE = 11,
 		DEVELOPER = 12,
 		SPAM_PREVENTION = 13,
+		HUAWEI_AR_ENGINE = 14,
+		JAVA2LUA = 15,
+		REAL_NAME_AUTH = 16,
+		SELECT_ROLE = 17,
+		ADVERTISEMENT_101 = 18,
+		_4399 = 19,
+		LOADING = 20,
 	}
 
 	--[[
@@ -73,6 +94,13 @@ function Android:initLogcat()
 		[SITUATION.REDEEM_CODE] = true,
 		[SITUATION.DEVELOPER] = false,
 		[SITUATION.SPAM_PREVENTION] = true,
+		[SITUATION.HUAWEI_AR_ENGINE] = true,
+		[SITUATION.JAVA2LUA] = true,
+		[SITUATION.REAL_NAME_AUTH] = true,
+		[SITUATION.SELECT_ROLE] = true,
+		[SITUATION.ADVERTISEMENT_101] = true,
+		[SITUATION._4399] = true,
+		[SITUATION.LOADING] = true,
 	}
 
 	--[[
@@ -92,13 +120,23 @@ function Android:initLogcat()
 		[SITUATION.REDEEM_CODE] = "REDEEM_CODE",
 		[SITUATION.DEVELOPER] = "DEVELOPER",
 		[SITUATION.SPAM_PREVENTION] = "SPAM_PREVENTION",
+		[SITUATION.HUAWEI_AR_ENGINE] = "RendererManager",
+		[SITUATION.JAVA2LUA] = "JAVA2LUA",
+		[SITUATION.REAL_NAME_AUTH] = "REAL_NAME_AUTH",
+		[SITUATION.SELECT_ROLE] = "SELECT_ROLE",
+		[SITUATION.ADVERTISEMENT_101] = "ADVERTISEMENT_101",
+		[SITUATION._4399] = "_4399",
+		[SITUATION.LOADING] = "LOADING",
 	}
 	
 	self.SITUATION = SITUATION
 end
 
 function Android:__getLogMethodInvokerBuilder__()
-	return newAndroidMethodInvokerBuilder()
+	return JavaMethodInvokerFactory:obtain()
+		:debug(false)
+		-- :setSignature("(Ljava/lang/String;Ljava/lang/String;)V")
+		-- :setClassName("org/appplay/lib/GameBaseActivity");
 		:setSignature("(Ljava/lang/String;Ljava/lang/String;)I")
 		:setClassName("android/util/Log");
 end
@@ -137,15 +175,16 @@ function Android:Logd(...)
 	else
 		logBuilder:setMethodName("i")
 	end
-	logBuilder:callAndroidMethod();
+	logBuilder:call();
 end
 
 function Android:Localize(situation)
-	if self.PRINT_IN_PC then 
+	local apiId = ClientMgr:getApiId()
+	if self.PRINT_IN_PC or apiId == 45 or apiId == 345 or apiId == 999 then 
 		return _G.print, _G.print
 	end
 	--situation为nil
-	if self.DEFAULT_LOG == false and not situation then
+	if self.ALLOW_NIL_TAG == false and not situation then
 		return self.EmptyPrint, self.EmptyPrint
 	end
 	--situation非nil时，开关未打开
@@ -167,6 +206,45 @@ end
 function Android:LogFabric(szLog)
 	-- if ClientMgr:getApiId() ~= 303 then return end
 	-- ClientMgr:logFabric(szLog);
+end
+
+function Android:HowManyElementsDoesTableHave(t)
+	print("HowManyElementsDoesTableHave(): ");
+	if not t then
+		return
+	end
+	local type = type
+	local tostring = tostring
+	local mapCounts = {
+		["function"] = 0,
+		["table"] = 0,
+		["userdata"] = 0,
+		["number"] = 0,
+		["string"] = 0,
+		["boolean"] = 0,
+	}
+	local mapNameTotalLength = {
+		["function"] = 0,
+		["table"] = 0,
+		["userdata"] = 0,
+		["number"] = 0,
+		["string"] = 0,
+		["boolean"] = 0,
+	}
+	for k, v in pairs(t) do
+		local szType = type(v)
+		local szKey = tostring(k)
+		print(szKey, szType)
+		mapCounts[szType] = mapCounts[szType] + 1
+		mapNameTotalLength[szType] = mapNameTotalLength[szType] + #szKey
+	end
+	
+	for k, v in pairs(mapCounts) do 
+		print("HowManyElementsDoesTableHave(): " .. k .. " : count = " .. v .. " | names' total length = " .. mapNameTotalLength[k]);
+		if v ~= 0 then
+			print("HowManyElementsDoesTableHave(): " .. k .. " names' average length = " .. (mapNameTotalLength[k] / v));
+		end
+	end
 end
 Android:init();
 --------------------------------------------------------Android end----------------------------------------------------------

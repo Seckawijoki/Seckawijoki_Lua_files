@@ -1,25 +1,34 @@
 ---------------------------------------------------------------AbsLayoutManager start---------------------------------------------------------------
+--[[
+	不初始化成员。避免metatable中__index的读取走到此类，无法保存实际的类
+	创建时由onRecycle初始化各个字段
+	公共使用的成员可放置于此
+]]
 local AbsLayoutManager = {
     m_szClassName = "AbsLayoutManager",
     m_clsMath = _G.math,
-    m_iOffsetX = 0,
-    m_iOffsetY = 0,
-    m_iMarginX = 0,
-    m_iMarginY = 0,
-    m_iBoxItemWidth = 0,
-    m_iBoxItemHeight = 0,
-    m_iMaxRow = 6,
-    m_iMaxColumn = 10,
-    m_szPoint = "topleft",
-    m_szRelativeTo = "UIClient",
-    m_szRelativePoint = "topleft",
-    m_szNamePrefix = "",
-    m_iCount = 0,
-    m_bHorizontal = false,
-    m_bFromLeftToRight = true,
-    m_bFromTopToBottom = true,
-    m_bRegularUI = true,
-    m_aUIObjects = {},
+    -- m_iOffsetX = 0,
+    -- m_iOffsetY = 0,
+    -- m_iMarginX = 0,
+    -- m_iMarginY = 0,
+    -- m_iBoxItemWidth = 0,
+    -- m_iBoxItemHeight = 0,
+    -- m_iMaxRow = 6,
+    -- m_iMaxColumn = 10,
+    -- m_szPoint = "topleft",
+    -- m_szRelativeTo = "UIClient",
+    -- m_szRelativePoint = "topleft",
+    -- m_szNamePrefix = "",
+    -- m_iCount = 0,
+    -- m_bHorizontal = false,
+    -- m_bFromLeftToRight = true,
+    -- m_bFromTopToBottom = true,
+	-- m_aUIObjects = {},
+	-- m_iLayoutEndIndex = 0,
+	-- m_bDebug = false,
+	-- m_iPlaneWidth = 0,
+	-- m_iPlaneHeight = 0,
+	-- m_bHasCalculatedPlaneSize = false,
 }
 function AbsLayoutManager:onRecycle()
 	-- print("AbsLayoutManager@" .. tostring(self) .. ":onLayoutManagerRecycle():")
@@ -39,11 +48,15 @@ function AbsLayoutManager:onRecycle()
 	self.m_bHorizontal = false;
 	self.m_bFromLeftToRight = true;
 	self.m_bFromTopToBottom = true;
-	self.m_bRegularUI = true;
+	self.m_iLayoutEndIndex = 0;
+	self.m_bDebug = false;
+	self.m_iPlaneWidth = 0;
+	self.m_iPlaneHeight = 0;
+	self.m_bHasCalculatedPlaneSize = false;
 	local aUIObjects = self.m_aUIObjects
 	if not aUIObjects then
-		aUIObjects = {}
-		self.m_aUIObjects = aUIObjects
+		self.m_aUIObjects = {}
+		aUIObjects = self.m_aUIObjects
 	end
 	local length = #aUIObjects
 	for i=1, length do 
@@ -75,7 +88,7 @@ function AbsLayoutManager:setBoxItemNamePrefix(szNamePrefix)
 	return self;
 end
 --[[
-	@param iOffsetX 距离plain控件的X轴初始位移。后续会并入到plain尺寸的计算。
+	@param iOffsetX 距离目标控件self.m_szRelativeTo的X轴初始位移。后续会并入到plain尺寸的计算。
 ]]
 function AbsLayoutManager:setOffsetX(iOffsetX)
 	self.m_iOffsetX = iOffsetX;
@@ -85,6 +98,9 @@ function AbsLayoutManager:setOffsetY(iOffsetY)
 	self.m_iOffsetY = iOffsetY;
 	return self;
 end
+--[[
+	@param iBoxItemWidth 指定规则控件的宽度，在布局时并入计算
+]]
 function AbsLayoutManager:setBoxItemWidth(iBoxItemWidth)
 	self.m_iBoxItemWidth = iBoxItemWidth >= 0 and iBoxItemWidth or 0;
 	return self;
@@ -108,6 +124,8 @@ end
 	@param iMaxRow 最大行数
 ]]
 function AbsLayoutManager:setMaxRow(iMaxRow)
+	local print = Android:Localize(Android.SITUATION.HUAWEI_AR_ENGINE);
+	print("setMaxRow(): iMaxRow = ", iMaxRow);
 	self.m_iMaxRow = iMaxRow > 0 and iMaxRow or self.m_iMaxRow;
 	return self;
 end
@@ -128,14 +146,62 @@ function AbsLayoutManager:setVertical()
 end
 --[[
 	Need inherited implementation.
+	计算容器布局的合适尺寸
+]]
+function AbsLayoutManager:calculatePlaneSize()
+	return self;
+end
+--[[
+	设置目标UI的尺寸	
+	Created on 2019-12-17 at 21:08:52
 ]]
 function AbsLayoutManager:resetPlaneSize()
+	if not self.m_bHasCalculatedPlaneSize then 
+		self:calculatePlaneSize();
+	end
+	local uiPlane = getglobal(self.m_szRelativeTo)
+	if not uiPlane then return self end
+	uiPlane:SetWidth(self.m_iPlaneWidth);
+	uiPlane:SetHeight(self.m_iPlaneHeight);
+	return self;
+end
+--[[
+	设置目标UI的尺寸	
+	Created on 2019-12-17 at 21:08:52
+]]
+function AbsLayoutManager:resetPlaneWithMinimalSize(iMinWidth, iMinHeight)
+	if not self.m_bHasCalculatedPlaneSize then 
+		self:calculatePlaneSize();
+	end
+	local uiPlane = getglobal(self.m_szRelativeTo)
+	if not uiPlane then return self end
+	iMinWidth = iMinWidth > self.m_iPlaneWidth and iMinWidth or self.m_iPlaneWidth
+	iMinHeight = iMinHeight > self.m_iPlaneHeight and iMinHeight or self.m_iPlaneHeight
+	uiPlane:SetWidth(iMinWidth);
+	uiPlane:SetHeight(iMinHeight);
+	return self;
+end
+--[[
+	设置其它UI的尺寸	
+	Created on 2019-12-17 at 21:08:52
+]]
+function AbsLayoutManager:resetOtherPlaneSize(szOtherUIName)
+	if not self.m_bHasCalculatedPlaneSize then 
+		self:calculatePlaneSize();
+	end
+	if not szOtherUIName then return self end
+	local uiOther = getglobal(szOtherUIName);
+	if not uiOther then	return self	end
+	uiOther:SetWidth(self.m_iPlaneWidth);
+	uiOther:SetHeight(self.m_iPlaneHeight);
 	return self;
 end
 --[[
 	Need inherited implementation.
+	对所有UI进行布局
 ]]
 function AbsLayoutManager:layoutAll(iCount)
+	self.m_iLayoutEndIndex = iCount
 	return self;
 end
 function AbsLayoutManager:setFromLeftToRight()
@@ -155,13 +221,6 @@ function AbsLayoutManager:setFromBottomToTop()
 	return self
 end
 --[[
-	??
-]]
-function AbsLayoutManager:setRegularUI(bRegular)
-	self.m_bRegularUI = bRegular;
-	return self
-end
---[[
 	添加需要布局的单个控件
 ]]
 function AbsLayoutManager:addIrregularUI(szUIName)
@@ -175,6 +234,13 @@ end
 	添加需要批量规则布局的控件
 ]]
 function AbsLayoutManager:addRegularCount(szNamePrefix, iCount)
+	return self:addRegularUICount(szNamePrefix, iCount)
+end
+
+--[[
+	添加需要批量规则布局的控件
+]]
+function AbsLayoutManager:addRegularUICount(szNamePrefix, iCount)
 	if not szNamePrefix then return self end
 	if not iCount or iCount <= 0 then return self end
 	local aUIObjects = self.m_aUIObjects;
@@ -199,6 +265,87 @@ function AbsLayoutManager:addRegularUIFromTo(szNamePrefix, iFrom, iTo)
 		if ui then
 			aUIObjects[#aUIObjects + 1] = ui
 		end
+	end
+	return self
+end
+--[[
+	隐藏剩余未进入布局的UI
+]]
+function AbsLayoutManager:hideRegularUI()
+	local aUIObjects = self.m_aUIObjects;
+	local length = #aUIObjects;
+	if length <= 0 or length < self.m_iLayoutEndIndex then
+		return self
+	end
+	for i=self.m_iLayoutEndIndex + 1, length do 
+		aUIObjects[i]:Hide();
+	end
+	return self
+end
+--[[
+	打印开关
+]]
+function AbsLayoutManager:setDebug(bDebug)
+	self.m_bDebug = bDebug or false
+	return self
+end
+--[[
+	
+	Created on 2019-12-18 at 11:55:28
+]]
+function AbsLayoutManager:resetUIWidth(iWidth)
+	local aUIObjects = self.m_aUIObjects;
+	local length = #aUIObjects;
+	if length <= 0 then
+		return self
+	end
+	for i=1, length do 
+		aUIObjects[i]:SetWidth(iWidth);
+	end
+	return self
+end
+--[[
+	
+	Created on 2019-12-18 at 11:55:23
+]]
+function AbsLayoutManager:resetUIHeight(iHeight)
+	local aUIObjects = self.m_aUIObjects;
+	local length = #aUIObjects;
+	if length <= 0 then
+		return self
+	end
+	for i=1, length do 
+		aUIObjects[i]:SetHeight(iHeight);
+	end
+	return self
+end
+--[[
+	
+	Created on 2019-12-18 at 11:57:55
+]]
+function AbsLayoutManager:resetUISize(iWidth, iHeight)
+	local aUIObjects = self.m_aUIObjects;
+	local length = #aUIObjects;
+	if length <= 0 then
+		return self
+	end
+	for i=1, length do 
+		aUIObjects[i]:SetSize(iWidth, iHeight);
+	end
+	return self
+end
+--[[
+	
+	Created on 2019-12-18 at 11:57:55
+]]
+function AbsLayoutManager:resetUIFontSize(iFontSize)
+	local aUIObjects = self.m_aUIObjects;
+	local length = #aUIObjects;
+	if length <= 0 then
+		return self
+	end
+	for i=1, length do 
+		aUIObjects[i]:SetFontSize(iFontSize);
 	end
 	return self
 end
@@ -229,15 +376,13 @@ function LayoutManagerFactory:newGridLayoutManager(szClassName)
 	local AbsLayoutManager = self.AbsLayoutManager
 	AbsLayoutManager.__index = AbsLayoutManager
 	ClassesCache:insertSuperClass(GridLayoutManager, AbsLayoutManager)
+	GridLayoutManager:onRecycle();
 	GridLayoutManager.m_bHorizontal = true
 	--[[
 		计算作为SlidingFrame的Plane控件的尺寸
 	]]
-	function GridLayoutManager:resetPlaneSize(iMinWidth, iMinHeight)
+	function GridLayoutManager:calculatePlaneSize()
 		-- self.m_iMaxColumn = iMaxColumn > 0 and iMaxColumn or self.m_iMaxColumn;
-		local uiPlane = getglobal(self.m_szRelativeTo);
-		iMinWidth = iMinWidth or uiPlane:GetWidth();
-		iMinHeight = iMinHeight or uiPlane:GetHeight();
 		local iTargetWidth, iTargetHeight
 		if self.m_bHorizontal then
 			local iRow = self.m_clsMath.ceil((self.m_iCount - 1) / self.m_iMaxColumn);
@@ -248,12 +393,11 @@ function LayoutManagerFactory:newGridLayoutManager(szClassName)
 			iTargetWidth = 2 * self.m_iOffsetX + (iColumn) * (self.m_iMarginX + self.m_iBoxItemWidth) - self.m_iMarginX;
 			iTargetHeight = 2 * self.m_iOffsetY + (self.m_iMaxRow) * (self.m_iMarginY + self.m_iBoxItemHeight) - self.m_iMarginY;
 		end
-		-- print("GridLayoutManager:resetPlaneSize(): iTargetWidth = ", iTargetWidth, "iTargetHeight = ", iTargetHeight);
-		iTargetWidth = iTargetWidth > iMinWidth and iTargetWidth or iMinWidth;
-		iTargetHeight = iTargetHeight > iMinHeight and iTargetHeight or iMinHeight;
-		uiPlane:SetWidth(iTargetWidth);
-		uiPlane:SetHeight(iTargetHeight);
-		return self;
+		-- print("GridLayoutManager:calculatePlaneSize(): iTargetWidth = ", iTargetWidth, "iTargetHeight = ", iTargetHeight);
+		self.m_iPlaneWidth = iTargetWidth
+		self.m_iPlaneHeight = iTargetHeight
+		self.m_bHasCalculatedPlaneSize = true
+		return self
 	end
 	--[[
 		@param uiTarget UI的userdata
@@ -302,6 +446,7 @@ function LayoutManagerFactory:newGridLayoutManager(szClassName)
 	]]
 	function GridLayoutManager:layoutAll(iCount)
 		self.m_iCount = iCount;
+		self.m_iLayoutEndIndex = iCount
 		-- print("GridLayoutManager:layoutAll(): iCount = ", iCount);
 		for i=1, iCount do 
 			self:onLayoutIndex(i);
@@ -325,6 +470,7 @@ function LayoutManagerFactory:newHorizontalSplitLayoutManager(szClassName)
 	local AbsLayoutManager = self.AbsLayoutManager
 	AbsLayoutManager.__index = AbsLayoutManager
 	ClassesCache:insertSuperClass(HorizontalSplitLayoutManager, AbsLayoutManager)
+	HorizontalSplitLayoutManager:onRecycle();
 	--[[
 		@Override
 		@param iMaxVisibleCount 最大可见控件数量
@@ -333,6 +479,7 @@ function LayoutManagerFactory:newHorizontalSplitLayoutManager(szClassName)
 	function HorizontalSplitLayoutManager:layoutAll(iMaxVisibleCount, iMaxCount)
 		-- local aAllPoints = {"topleft", "top", "topright", "left", "center", "right", "bottomleft", "bottom", "bottomright",}
 		iMaxVisibleCount = iMaxVisibleCount > iMaxCount and iMaxCount or iMaxVisibleCount;
+		self.m_iLayoutEndIndex = iMaxVisibleCount
 		local iMiddleIndex = math.ceil(iMaxVisibleCount / 2); -- 中间索引值
 		local szOriginalPoint = self.m_szPoint;
 		local szNamePrefix = self.m_szNamePrefix;
@@ -408,10 +555,12 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 	local AbsLayoutManager = self.AbsLayoutManager
 	AbsLayoutManager.__index = AbsLayoutManager
 	ClassesCache:insertSuperClass(RelativeOffsetGridLayoutManager, AbsLayoutManager)
+	RelativeOffsetGridLayoutManager:onRecycle();
 	--[[
 		@Override
 	]]
 	function RelativeOffsetGridLayoutManager:layoutAll()
+		local bDebug = self.m_bDebug;
 		local iMarginX = self.m_iMarginX;
 		local iMarginY = self.m_iMarginY;
 		local aUIObjects = self.m_aUIObjects;
@@ -420,9 +569,13 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 		iMarginX = self.m_bFromLeftToRight and iMarginX or -iMarginX
 		iMarginY = self.m_bFromTopToBottom and iMarginY or -iMarginY
 		local length = #aUIObjects;
+		if bDebug then
+			print("layoutAll(): length = ", length);
+		end
 		if length <= 0 then
 			return self;
 		end
+		self.m_iLayoutEndIndex = length
 		if self.m_bHorizontal then
 			local iMaxColumn = self.m_iMaxColumn;
 			local szPoint = self.m_bFromLeftToRight and "left" or "right"
@@ -431,6 +584,7 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 			local szHeadRelativePoint = self.m_bFromTopToBottom and "bottom" or "top"
 			aUIObjects[1]:SetPoint(self.m_szPoint, self.m_szRelativeTo, self.m_szRelativePoint, self.m_iOffsetX, self.m_iOffsetY)
 			for i=2, length do 
+				aUIObjects[i]:Show();
 				if i % iMaxColumn == 1 then
 					aUIObjects[i]:SetPoint(szHeadPoint, aUIObjects[i-iMaxColumn]:GetName(), szHeadRelativePoint, 0, iMarginY)
 				else
@@ -439,12 +593,16 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 			end
 		else
 			local iMaxRow = self.m_iMaxRow;
+			if bDebug then
+				print("layoutAll(): iMaxRow = ", iMaxRow);
+			end
 			local szPoint = self.m_bFromTopToBottom and "top" or "bottom"
 			local szRelativePoint = self.m_bFromTopToBottom and "bottom" or "top"
 			local szHeadPoint = self.m_bFromLeftToRight and "left" or "right"
 			local szHeadRelativePoint = self.m_bFromLeftToRight and "right" or "left"
 			aUIObjects[1]:SetPoint(self.m_szPoint, self.m_szRelativeTo, self.m_szRelativePoint, self.m_iOffsetX, self.m_iOffsetY)
 			for i=2, length do 
+				aUIObjects[i]:Show();
 				if i % iMaxRow == 1 then
 					aUIObjects[i]:SetPoint(szHeadPoint, aUIObjects[i-iMaxRow]:GetName(), szHeadRelativePoint, iMarginX, 0)
 				else
@@ -452,9 +610,18 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 				end
 			end
 		end
+		if bDebug then
+			print("layoutAll(): end");
+		end
 		return self;
 	end
-	function RelativeOffsetGridLayoutManager:resetPlaneSize()
+	--[[
+		TODO
+		szResetUIName @string 重置的目标UI
+		@Override
+	]]
+	function RelativeOffsetGridLayoutManager:calculatePlaneSize()
+		-- local bDebug = self.m_bDebug;
 		local math = _G.math
 		local iMarginX = math.abs(self.m_iMarginX)
 		local iMarginY = math.abs(self.m_iMarginY)
@@ -465,7 +632,7 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 		iMarginY = self.m_bFromTopToBottom and iMarginY or -iMarginY
 		local length = #aUIObjects;
 		if length <= 0 then
-			return self;
+			return self
 		end
 		local iMaxHeight = 2 * iOffsetY
 		local iMaxWidth = 2 * iOffsetX
@@ -479,6 +646,9 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 			
 		else
 			iMaxRow = self.m_iMaxRow;
+			if iMaxRow == 0 then
+				return self
+			end
 			iMaxColumn = math.ceil(length / iMaxRow)
 			iMaxHeight = iMaxHeight + iMaxRow * iMarginY - iMarginY
 			iMaxWidth = iMaxWidth + iMaxColumn * iMarginX - iMarginX
@@ -510,7 +680,9 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 
 		iMaxHeight = iMaxHeight + iMaxColumnHeight
 		iMaxWidth = iMaxWidth + iMaxRowWidth
-		getglobal(self.m_szRelativeTo):SetSize(iMaxWidth, iMaxHeight)
+		self.m_iPlaneWidth = iMaxWidth
+		self.m_iPlaneHeight = iMaxHeight
+		self.m_bHasCalculatedPlaneSize = true
 		return self;
 	end
 	return RelativeOffsetGridLayoutManager;
@@ -532,27 +704,39 @@ function LayoutManagerFactory:newLinearLayoutManager(szClassName)
 	local AbsLayoutManager = self.AbsLayoutManager
 	AbsLayoutManager.__index = AbsLayoutManager
 	ClassesCache:insertSuperClass(LinearLayoutManager, AbsLayoutManager)
+	LinearLayoutManager:onRecycle();
 	LinearLayoutManager.m_szPoint = "center";
 	--[[
 		@Override
 	]]
 	function LinearLayoutManager:layoutAll()
-		local iMarginX = self.m_iMarginX;
-		local iMarginY = self.m_iMarginY;
 		local aUIObjects = self.m_aUIObjects;
 		local length = #aUIObjects;
 		if length <= 0 then
 			return self;
 		end
+		self.m_iLayoutEndIndex = length
 		if self.m_bHorizontal then
+			local iMarginX = self.m_clsMath.abs(self.m_iMarginX);
+			local bFromLeftToRight = self.m_bFromLeftToRight;
 			aUIObjects[1]:SetPoint(self.m_szPoint, self.m_szRelativeTo, self.m_szRelativePoint, self.m_iOffsetX, self.m_iOffsetY)
 			for i=2, length do 
-				aUIObjects[i]:SetPoint("left", aUIObjects[i-1]:GetName(), "right", iMarginX, 0)
+				if bFromLeftToRight then
+					aUIObjects[i]:SetPoint("left", aUIObjects[i-1]:GetName(), "right", iMarginX, 0)
+				else
+					aUIObjects[i]:SetPoint("right", aUIObjects[i-1]:GetName(), "left", -iMarginX, 0)
+				end
 			end
 		else
+			local iMarginY = self.m_clsMath.abs(self.m_iMarginY);
+			local bFromTopToBottom = self.m_bFromTopToBottom;
 			aUIObjects[1]:SetPoint(self.m_szPoint, self.m_szRelativeTo, self.m_szRelativePoint, self.m_iOffsetX, self.m_iOffsetY)
 			for i=2, length do 
-				aUIObjects[i]:SetPoint("top", aUIObjects[i-1]:GetName(), "bottom", 0, iMarginY)
+				if bFromTopToBottom then
+					aUIObjects[i]:SetPoint("top", aUIObjects[i-1]:GetName(), "bottom", 0, iMarginY)
+				else
+					aUIObjects[i]:SetPoint("bottom", aUIObjects[i-1]:GetName(), "top", 0, -iMarginY)
+				end
 			end
 		end
 		return self;
@@ -566,7 +750,7 @@ function LayoutManagerFactory:newLinearLayoutManager(szClassName)
 		根据所有控件的最大高度和m_iMarginY，重设szRelativeTo的高
 		@Override
 	]]
-	function LinearLayoutManager:resetPlaneSize()
+	function LinearLayoutManager:calculatePlaneSize()
 		local iTotalHeight = 0
 		local iTotalWidth = 0
 		local aUIObjects = self.m_aUIObjects;
@@ -597,12 +781,9 @@ function LayoutManagerFactory:newLinearLayoutManager(szClassName)
 			iTotalWidth = iMaxWidth + 2 * self.m_iMarginX
 			iTotalHeight = iTotalHeight + (length - 1) * self.m_iMarginY;
 		end
-		local uiRelativeTo = getglobal(self.m_szRelativeTo);
-		if not uiRelativeTo then
-			return self;
-		end
-		uiRelativeTo:SetHeight(iTotalHeight);
-		uiRelativeTo:SetWidth(iTotalWidth);
+		self.m_iPlaneWidth = iTotalWidth
+		self.m_iPlaneHeight = iTotalHeight
+		self.m_bHasCalculatedPlaneSize = true
 		return self;
 	end
 	return LinearLayoutManager;
