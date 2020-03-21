@@ -151,6 +151,10 @@ function PerformanceTest:printGlobalFunctionCallCount()
 	end
 end
 
+PerformanceTest:howManyElementsDoesGlobalHave(_G);
+
+
+
 -- if PerformanceTest then
 --     if PerformanceTest.initStatisticGlobalFunctionCallCount then
 --         PerformanceTest:initStatisticGlobalFunctionCallCount()
@@ -158,11 +162,5 @@ end
 --     end
 --     debug.sethook(PerformanceTest.HookGlobalFunctionCallCount, "c")
 -- end
-
--- print(os.time())
--- for i=1, 1000000 do 
---     local t = type(1)
--- end
--- print(os.time())
 
 -- PerformanceTest:printGlobalFunctionCallCount()

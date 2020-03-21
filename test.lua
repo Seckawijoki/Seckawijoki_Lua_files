@@ -1,5 +1,8 @@
 -- require("deep_copy_table");
 require("utils/Android")
+require("utils/override_string___add")
+require("utils/override_table___tostring")
+require("utils/ResponsibilityChainPattern")
 local blMapInfo = {
   wids = {
       [3] = 102, 
@@ -286,8 +289,6 @@ String = {
 
 print(String)
 
-getmetatable("").__add = function(x, y) return tostring(x) .. tostring(y) end
-
 print("hello " + true + " " + 1 )
 
 print(not nil)
@@ -335,3 +336,95 @@ end
 
 -- print(url_addParams(nil))
 print(url_addParams(""))
+
+
+local JsBridge = {
+	m_aFuncParams = {
+
+	}, 
+}
+function JsBridge:PushFunction(func, ...)
+	-- local print = Android:Localize(Android.SITUATION.JS_BRIDGE);
+	print("PushFunction(): func = ", func)
+	self.m_aFuncParams[#self.m_aFuncParams + 1] = {...};
+	self[#self + 1] = func;
+end
+
+JsBridge:PushFunction()
+
+print("JsBridge(): JsBridge = " + JsBridge);
+
+local url_ = "hTtPs://activity.mini1.cn/newcdkey/?type=open_SkinARCamera&cdkey=XD52cf7609484398100090";
+local header_ = string.lower( string.sub( url_, 1,  6 ) )
+print("is_https_url(): header_ = " + header_);
+
+local AbsRedeemCodeParser = {
+
+}
+
+function AbsRedeemCodeParser:useAccountItem()
+  print("useAccountItem(): self = " + tostring(self));
+end
+
+function AbsRedeemCodeParser:onReceive()
+  print("onReceive(): self = " + tostring(self));
+  self:useAccountItem();
+end
+AbsRedeemCodeParser.__index = AbsRedeemCodeParser
+local RedeemCodeParser = {}
+setmetatable(RedeemCodeParser, AbsRedeemCodeParser)
+
+RedeemCodeParser:onReceive()
+
+local useAccountItem = function(self)
+  print("useAccountItem(): self = " + self);
+end
+RedeemCodeParser.useAccountItem = useAccountItem
+
+RedeemCodeParser:onReceive()
+
+function parseVariableParams2(...)
+  local t = {...}
+  print("parseVariableParams2(): t = " + t);
+  for i=1, #t do 
+    print("parseVariableParams2(): t[i] = " + t[i]);
+  end
+end
+
+function parseVariableParams(...)
+  parseVariableParams2(...)
+end
+
+parseVariableParams(1, "string", false, {});
+parseVariableParams();
+
+local QRCodeScanner = {
+
+}
+
+function QRCodeScanner:init()
+  ResponsibilityChainFactory:wrap(self, "parseQRCode")
+    :addNode(self.parse3)
+    :addDerivativeNode(self.parse2, AbsRedeemCodeParser)
+    :addNode(self.parse1)
+end
+
+function QRCodeScanner:parse1(qrCode)
+    print("parse1(): qrCode = " + qrCode);
+    return false
+end
+
+function QRCodeScanner:parse2(qrCode)
+  print("parse2(): qrCode = " + qrCode);
+  self.m_clsCurrentNode:onReceive();
+  return qrCode == "123456789"
+end
+
+function QRCodeScanner:parse3(qrCode)
+  print("parse3(): qrCode = " + qrCode);
+  return false
+end
+
+QRCodeScanner:init();
+QRCodeScanner:parseQRCode("123456789")
+print("test.lua(): QRCodeScanner = " + QRCodeScanner);
