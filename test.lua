@@ -467,3 +467,6 @@ var1(false, "string", 180)
 for i=5, 1 do 
   print(i)
 end
+
+local bShowUnlockTips 
+print(not bShowUnlockTips)
