@@ -5,7 +5,7 @@ local AbsResponsibilityChainBuilder = {
 }
 
 local ResponsibilityChainFactory = {
-    
+    AbsResponsibilityChainBuilder = AbsResponsibilityChainBuilder,
 }
 _G.ResponsibilityChainFactory = ResponsibilityChainFactory
 
@@ -47,8 +47,12 @@ function AbsResponsibilityChainBuilder:__addNode(clsInsertedNode, funcIntercept)
 	end
 	clsChain.m_clsTail = clsInsertedNode;
 	clsInsertedNode.m_clsChain = self.m_clsChain;
+	self:register(clsInsertedNode, funcIntercept);
+	return self;
+end
 
-	clsInsertedNode[clsChain.m_szInterfaceName] = function(self, ...)
+function AbsResponsibilityChainBuilder:register(clsNode, funcIntercept)
+	clsNode[self.m_clsChain.m_szInterfaceName] = function(self, ...)
 		local clsChain = self.m_clsChain;
 		clsChain.m_clsCurrentNode = self;
 		if funcIntercept(clsChain, ...) then

@@ -202,7 +202,7 @@ function ClassesCache:obtain(szClassName)
     if class then
         return class, true
     end
-    class = self:newRecyclerClass()
+    class = self:newRecyclerClass(szClassName)
 	class.m_szClassName = szClassName
     local classArray = self.m_mClassArrayMap[szClassName]
     if not classArray then 
@@ -215,11 +215,29 @@ end
 --[[
 	重新继承
 ]]
-function ClassesCache:insertSuperClass(childClass, superClass)
-	if not superClass then return end
+function ClassesCache:insertSuperClass(childClass, parentClass)
+	if not parentClass then return end
+	local getmetatable = _G.getmetatable
 	if getmetatable(childClass) then
-		setmetatable(superClass, getmetatable(childClass))
+		local childSuperClass = getmetatable(childClass)
+		if childSuperClass == parentClass then
+			childClass.super = parentClass
+			parentClass.__index = parentClass
+			setmetatable(childClass, parentClass)
+			return
+		end
+		local parentSuperClass = parentClass
+		while getmetatable(parentSuperClass) do 
+			parentSuperClass = getmetatable(parentSuperClass)
+		end
+		if parentSuperClass ~= childSuperClass then
+			parentSuperClass.super = childSuperClass
+			childSuperClass.__index = childSuperClass
+			setmetatable(parentSuperClass, childSuperClass)
+		end
 	end
-	setmetatable(childClass, superClass)
+	childClass.super = parentClass
+	parentClass.__index = parentClass
+	setmetatable(childClass, parentClass)
 end
 --------------------------------------------------------ClassesCache end----------------------------------------------------------

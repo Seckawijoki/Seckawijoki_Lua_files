@@ -428,3 +428,42 @@ end
 QRCodeScanner:init();
 QRCodeScanner:parseQRCode("123456789")
 print("test.lua(): QRCodeScanner = " + QRCodeScanner);
+
+local stringdef9658 = [[
+  #cf4b225游戏权限的操作规则#n
+服主可调整本人与所有玩家的个人游戏权限，以及云服的全体游戏权限。
+超管可调整本人与普通玩家的个人游戏权限(超管不能调整服主与管理的权限)，以及云服的全体游戏权限。
+其他玩家可查看自己的个人游戏权限与云服的全体游戏权限情况，但不能进行调整。
+  
+#cf4b225个人游戏权限与全体游戏权限#n
+当玩家的个人游戏权限未被更改(该玩家“游戏权限” 按钮默认为蓝色)，玩家会跟随云服的全体游戏权限开关。
+当玩家的个人游戏权限被更改后(该玩家“游戏权限” 按钮变为黄色)，玩家只跟随他的个人游戏权限，不受云服的全体游戏权限限制与影响。
+  
+#cf4b225如何将玩家个人游戏权限恢复为未更改状态#n
+服主或超管，点击对应玩家的游戏权限-“权限说明”旁的还原图标，则该玩家的个人游戏权限恢复为未更改状态(该玩家“游戏权限” 按钮回复为蓝色)，玩家会跟随云服的全体游戏权限开关。
+]]
+
+local gsub = string.gsub(stringdef9658, '\r$', '');
+print("test(): gsub = ", gsub);
+
+function realVar3(b, sz, i)
+  print("realVar3(): b = ", b);
+  print("realVar3(): sz = ", sz);
+  print("realVar3(): i = ", i);
+end
+
+function var2(...)
+  print("var2(): {...} = ", {...});
+  realVar3(...)
+end
+
+function var1(...)
+  print("var1(): {...} = ", {...});
+  var2(...)
+end
+
+var1(false, "string", 180)
+
+for i=5, 1 do 
+  print(i)
+end

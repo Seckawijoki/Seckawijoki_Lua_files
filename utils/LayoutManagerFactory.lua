@@ -1,3 +1,4 @@
+require("ClassesCache")
 ---------------------------------------------------------------AbsLayoutManager start---------------------------------------------------------------
 --[[
 	不初始化成员。避免metatable中__index的读取走到此类，无法保存实际的类
@@ -230,6 +231,7 @@ function AbsLayoutManager:addIrregularUI(szUIName)
 	self.m_aUIObjects[#self.m_aUIObjects + 1] = ui
 	return self
 end
+
 --[[
 	添加需要批量规则布局的控件
 ]]
@@ -271,7 +273,7 @@ end
 --[[
 	隐藏剩余未进入布局的UI
 ]]
-function AbsLayoutManager:hideRegularUI()
+function AbsLayoutManager:hideRestUI()
 	local aUIObjects = self.m_aUIObjects;
 	local length = #aUIObjects;
 	if length <= 0 or length < self.m_iLayoutEndIndex then
@@ -559,7 +561,7 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 	--[[
 		@Override
 	]]
-	function RelativeOffsetGridLayoutManager:layoutAll()
+	function RelativeOffsetGridLayoutManager:layoutAll(iCount)
 		local bDebug = self.m_bDebug;
 		local iMarginX = self.m_iMarginX;
 		local iMarginY = self.m_iMarginY;
@@ -568,7 +570,7 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 		iMarginY = math.abs(iMarginY)
 		iMarginX = self.m_bFromLeftToRight and iMarginX or -iMarginX
 		iMarginY = self.m_bFromTopToBottom and iMarginY or -iMarginY
-		local length = #aUIObjects;
+		local length = iCount and iCount < #aUIObjects and iCount or #aUIObjects
 		if bDebug then
 			print("layoutAll(): length = ", length);
 		end
@@ -630,7 +632,7 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 		local aUIObjects = self.m_aUIObjects;
 		iMarginX = self.m_bFromLeftToRight and iMarginX or -iMarginX
 		iMarginY = self.m_bFromTopToBottom and iMarginY or -iMarginY
-		local length = #aUIObjects;
+		local length = self.m_iLayoutEndIndex or #aUIObjects;
 		if length <= 0 then
 			return self
 		end
@@ -643,20 +645,57 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 		local iMaxRowWidth = 0
 		local iRowWidth = 0
 		if self.m_bHorizontal then
+			-- 行优先
+			iMaxColumn = self.m_iMaxColumn;
+			if iMaxColumn == 0 then
+				return self
+			end
+			iMaxRow = math.ceil(length / iMaxColumn)
+			iMaxWidth = iMaxWidth + (iMaxColumn - 1) * iMarginX
+			iMaxHeight = iMaxHeight + (iMaxRow - 1) * iMarginY
+			print("calculatePlaneSize(): iMaxColumn = " + iMaxColumn);
+			print("calculatePlaneSize(): iMaxRow = " + iMaxRow);
+
+			for i=1, iMaxRow do 
+				iRowWidth = 0
+				for j=1, iMaxColumn do 
+					local index = (i - 1) * iMaxRow + j
+					if index > length then break end
+					iRowWidth = iRowWidth + aUIObjects[index]:GetWidth()
+				end
+				if iMaxRowWidth < iRowWidth then
+					iMaxRowWidth = iRowWidth
+				end
+			end
 			
+			for j=1, iMaxColumn do 
+				iColumnHeight = 0
+				for i=1, iMaxRow do 
+					local index = (i - 1) * iMaxColumn + j
+					print("calculatePlaneSize(): index = " + index);
+					if index > length then break end
+					iColumnHeight = iColumnHeight + aUIObjects[index]:GetHeight()
+				end
+				print("calculatePlaneSize(): iColumnHeight = " + iColumnHeight);
+				if iMaxColumnHeight < iColumnHeight then
+					iMaxColumnHeight = iColumnHeight
+				end
+			end
 		else
+			-- 列优先
 			iMaxRow = self.m_iMaxRow;
 			if iMaxRow == 0 then
 				return self
 			end
 			iMaxColumn = math.ceil(length / iMaxRow)
-			iMaxHeight = iMaxHeight + iMaxRow * iMarginY - iMarginY
-			iMaxWidth = iMaxWidth + iMaxColumn * iMarginX - iMarginX
+
+			iMaxWidth = iMaxWidth + (iMaxColumn - 1) * iMarginX
+			iMaxHeight = iMaxHeight + (iMaxRow - 1) * iMarginY
 			
-			for i=1, iMaxColumn do 
+			for j=1, iMaxColumn do 
 				iColumnHeight = 0
-				for j=1, iMaxRow do 
-					local index = (i - 1) * iMaxRow + j
+				for i=1, iMaxRow do 
+					local index = (j - 1) * iMaxColumn + i + 1
 					if index > length then break end
 					iColumnHeight = iColumnHeight + aUIObjects[index]:GetHeight()
 				end
@@ -665,10 +704,10 @@ function LayoutManagerFactory:newRelativeOffsetGridLayoutManager(szClassName)
 				end
 			end
 
-			for j=1, iMaxRow do 
+			for i=1, iMaxRow do 
 				iRowWidth = 0
-				for i=1, iMaxColumn do 
-					local index = (i - 1) * iMaxRow + j
+				for j=1, iMaxColumn do 
+					local index = (j - 1) * iMaxRow + i + 1
 					if index > length then break end
 					iRowWidth = iRowWidth + aUIObjects[index]:GetWidth()
 				end

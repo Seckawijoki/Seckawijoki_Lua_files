@@ -1,0 +1,4 @@
+{
+    "lua_analyzer.codeLinting.checkAfterSave": false,
+    "lua_analyzer.codeLinting.checkWhileTyping": false
+}
