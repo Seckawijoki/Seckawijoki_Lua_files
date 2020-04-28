@@ -1,163 +1,119 @@
-local useAccountItem = function(self, id, num)
-	local tonumber = _G.tonumber
-	local tostring = _G.tostring
-	if not id or not num then 
-		return
+NickModifyFrame_OnShowOld = _G.NickModifyFrame_OnShow
+function NickModifyFrame_OnShow()
+	local edit         = getglobal("NickModifyFrameContentNameEdit");
+	local costFont         = getglobal("NickModifyFrameContentNeedCost");
+	local modifyNum = AccountManager:getAccountData():getNickModify();
+	edit:Clear();
+	local enablealternick = if_open_alter_name();
+	edit:enableEdit(enablealternick); 
+
+	local env = get_game_env()
+	local is_debug = LuaInterface and LuaInterface:isdebug() or false
+	local is_UseChangeNameCard = g_ChangeNameCard.callback and true or false
+	if is_UseChangeNameCard then
+			edit:enableEdit(true);
 	end
 
-	local itemId = id
-	if itemId == 10000
-	or itemId == 10002
-	then
-		local showlist = {
-			[1] = {
-				id = itemId,
-				num = num,
-			}
-		}
-		SetGameRewardFrameInfo(GetS(3160), showlist, "");
-		return
-	end
-
-	if self:isAvatarSkin(itemId) then
-		local theOtherDuduBoboItemId = 
-		itemId == 20412
-		and 20413
-		or 20412
-		self.ShowQRActiveNewSkin = self:checkWhetherHasOwnedTheSkin(theOtherDuduBoboItemId) and 34 or 0
-		local skinId = _G.ITEM_ID_TO_SKIN_ID[itemId]
-		if skinId then 
-			self:UpdateQRSuccessSkinInfo(skinId)
-		end
-		getglobal("ActivityFrame"):Hide();
-		return
-	end
-
-	local code, list, cfg;
-	if self:isAvatarItem(itemId) then
-		code = ErrorCode.OK
-		list = {}
-		list[1] = {
-			id = tonumber(itemId),
-			num = tonumber(num),
-		}
-	elseif self:isPermanentSkin(itemId) then
-		code, list, cfg = AccountManager:getAccountData():notifyServerUseAccountItem(id, num);
+	local Free_Modify_Num = getFunctionVpValue(NickModifyFrame_OnShowOld, "Free_Modify_Num")
+	local cost         = 0;
+	if modifyNum < Free_Modify_Num  or g_ChangeNameCard.callback then
+			costFont:SetText(0);
+			cost = 0;
 	else
-		local showlist = {
-			[1] = {
-				id = itemId,
-				num = num,
-			}
-		}
-		SetGameRewardFrameInfo(GetS(3160), showlist, "");
-		return
+			local renameCost = AccountManager:getAccountData():getNickModifyCost();
+			costFont:SetText(renameCost);
+			cost = renameCost;
+	end
+	local hasMini        = AccountManager:getAccountData():getMiniCoin();
+
+	if ClientCurGame and ClientCurGame:isInGame() and not getglobal("NickModifyFrame"):IsReshow() then
+			ClientCurGame:setOperateUI(true);
 	end
 
-	if code == ErrorCode.OK then
-		StatisticsStashUseItem(id, "使用成功");
-		if list and next(list) ~= nil then
-			SetGameRewardFrameInfo(GetS(3160), list, "");
-		elseif cfg and next(cfg) ~= nil then
-			if cfg.Tag and cfg.Tag == 5 then 
-				ShowGameTips(GetS(9252), 3);
-			else
-				GetInst("UIManager"):Open("ShopGain",{gainType = 3, id = cfg.SkinID, days = cfg.ExpireTimeType});
-			end 
-		end
-	else
-		ShowGameTips(GetS(t_ErrorCodeToString[code]));
-	end
+	SetCurEditBox("NickModifyFrameContentNameEdit");
 end
 
-local onReceive = function(self)
-	local tonumber = _G.tonumber
-	local tostring = _G.tostring
-	local ret = self.m_tBindRedeemCodeResult
-	local UNAVAILABLE = 0
-	-- an upvalue
-	local cdkey = ret.data.cdk_id or self.m_szCDKey
-	local env =  ClientMgr:getGameData("game_env");
-	local apiId = ClientMgr:getApiId();
-	local strVersion = ClientMgr:clientVersionStr();
-	local baseUrl = "s4_http://cdk.mini1.cn/api/receive";
-	if IsOverseasVer() or env == 10 or env == 12 then 
-		baseUrl = "s4_https://cdk.miniworldgame.com/api/receive";
-	end
-	baseUrl = baseUrl .. "?cdk_id=" .. cdkey;
-	baseUrl = baseUrl .. "&channel=" .. apiId;
-	baseUrl = baseUrl .. "&version=" .. strVersion;
-	baseUrl = baseUrl .. "&denv=" .. env;
-	baseUrl = url_addParams(baseUrl);
-	local rpc_string = ns_http.func.rpc_string
-	self:clearProps();
-	local function callback(json)
-		self:onResponseReceive(json)
+function NickModifyFrameModifyBtn_OnClick()
+	local isChangeCard = g_ChangeNameCard.callback and true or false
+	if not isChangeCard and not CheckCanAlterName() then
+			return
 	end
 
-	local cdk_prop_m = ret.data.cdk_prop_m
-	if cdk_prop_m and #cdk_prop_m > 0 then 
-		for i=1, #cdk_prop_m do 
-			local is_receive = cdk_prop_m[i].is_receive
-			if is_receive and is_receive ~= UNAVAILABLE then 
-				local mainPropUrl = baseUrl .. "&cdk_prop_id=" .. cdk_prop_m[i].m_cdk_prop_id;
-				mainPropUrl = mainPropUrl .. "&" .. "central=1";
-				self:offerProp(cdk_prop_m[i].prop_id, cdk_prop_m[i].p_number)
-				threadpool:work(rpc_string, mainPropUrl, callback)
-			else
-				ShowGameTips(GetS(20302));
+	local costMini         = 0;
+	local modifyNum = AccountManager:getAccountData():getNickModify();
+	local Free_Modify_Num = getFunctionVpValue(NickModifyFrame_OnShowOld, "Free_Modify_Num")
+	if modifyNum < Free_Modify_Num then
+			costMini = 0;
+	else
+			costMini = AccountManager:getAccountData():getNickModifyCost();
+	end
+
+	local hasMini        = AccountManager:getAccountData():getMiniCoin();
+	if hasMini >= costMini or isChangeCard then
+			local edit = getglobal("NickModifyFrameContentNameEdit");
+			local editText = edit:GetText();
+			local appid = ClientMgr:getApiId();
+			--角色名字含有空格
+			if ClientMgr:getApiId() < 300 or ClientMgr:getApiId() == 999 then
+					if string.find(editText,"%s")   then
+							ShowGameTips(GetS(20663), 3);
+							return;
+					end
 			end
-		end
-	end
 
-	local cdk_prop_f = ret.data.cdk_prop_f
-	if cdk_prop_f and #cdk_prop_f > 0 then 
-		for i=1, #cdk_prop_f do 
-			local is_receive = cdk_prop_f[i].is_receive
-			if is_receive and is_receive ~= UNAVAILABLE then 
-				local subPropUrl = baseUrl .. "&cdk_prop_id=" .. cdk_prop_f[i].m_cdk_prop_id;
-				subPropUrl = subPropUrl .. "&" .. "central=2";
-				self:offerProp(cdk_prop_f[i].prop_id, cdk_prop_f[i].p_number)
-				threadpool:work(rpc_string, subPropUrl, callback)
-			else
-				ShowGameTips(GetS(20302));
+			if CheckFilterString(editText) then        --提示角色名有敏感词
+					return;
 			end
-		end
-	end
-end
 
-AbsRedeemCodeParser =_G.getmetatable(_G.QRCodeScanner.RedeemCodeParser)
-if AbsRedeemCodeParser then
-	AbsRedeemCodeParser.useAccountItem = useAccountItem
-	AbsRedeemCodeParser.onReceive = onReceive
-end
+			if editText == "" then                        --提示角色名不能为空                        
+					ShowGameTips(GetS(45), 3)
+					return;
+			end
+			if not AccountManager:requestCheckNickname(editText) then                --提示角色名已存在
+					ShowGameTips(GetS(46), 3)
+					return;
+			end
+			if string.find(editText, "#") then                --提示“#”号
+					ShowGameTips(GetS(358), 3);
+					return
+			end
 
-function QRCodeScanner:parseRedeemCode(qrCode)
-	if not qrCode or #qrCode <= 0 then return false end
-	self.m_szQRCode = qrCode;
-	local cdkey;
-	if is_https_url(qrCode) then
-		local http_url = qrCode;
-		local index = string.find(http_url, "cdkey=");
-		cdkey = string.sub(http_url, index+6);
+			if AccountManager:getAccountData():notifyServerAddNickModify(costMini) ~= 0 then
+					--ShowGameTips(DefMgr:getStringDef(282), 3);
+					return;
+			end
+
+			if AccountManager:requestModifyRole(editText, AccountManager:getRoleModel(), AccountManager:getRoleSkinModel(), false, nil,isChangeCard) then
+					ShowGameTips(GetS(126)..editText, 3);
+					--使用改名卡回调
+					if g_ChangeNameCard.callback then
+							g_ChangeNameCard.callback()
+					end
+
+					getglobal("NickModifyFrame"):Hide();
+
+					getglobal("LobbyFrameHeadInfoRoleName"):SetText(AccountManager:getNickName());
+					getglobal("MiniLobbyFrameTopRoleInfoName"):SetText(AccountManager:getBlueVipIconStr(AccountManager:getUin())..AccountManager:getNickName(), 53, 84, 84);
+					getglobal("PlayerExhibitionCenterRoleInfoName"):SetText(AccountManager:getBlueVipIconStr(AccountManager:getUin())..AccountManager:getNickName(), 61, 69, 70);
+					getglobal("GameSetFrameBaseName"):SetText(AccountManager:getNickName());
+					
+					PlayerCenterFrame_dataChange(2);  --名字修改                        
+
+					--统计消耗迷你币
+					if costMini > 0 then
+							local name = "修改名字";
+							ClientMgr:statisticsGamePurchaseMiniCoin(name, 1, costMini);
+					end
+			end
 	else
-		cdkey = qrCode;
+			local lackMiniNum = costMini - hasMini;
+			--[[
+			local cost = math.ceil(lackMiniNum/10);
+			local buyNum = cost * 10;
+			cost,buyNum = GetPayRealCost(cost);
+			]]
+			local cost, buyNum = GetPayRealCost(lackMiniNum);
+			local text = GetS(453, cost, buyNum);
+			StoreMsgBox(6, text, GetS(456), -1, lackMiniNum, costMini, nil, NotEnoughMiniCoinCharge, cost);
 	end
-	self.RedeemCodeParser.m_szCDKey = cdkey;
-	
-	local env =  ClientMgr:getGameData("game_env");
-	local http_request_url = "s4_http://cdk.mini1.cn/api/config?cdk_id=";
-	if IsOverseasVer() or env == 10 or env == 12 then 
-		http_request_url = "s4_https://cdk.miniworldgame.com/api/config?cdk_id=";
-	end
-	http_request_url = http_request_url .. cdkey;
-	http_request_url = http_request_url .. "&denv=" .. env;
-	http_request_url = url_addParams(http_request_url)
-	local function callback(json)
-		self.RedeemCodeParser:onResponseCheckBindingEnabled(json)
-	end
-	ns_http.func.rpc_string(http_request_url, callback);
-    return true;
 end
-
-_G.QRCodeScanner:registerChainFunction(_G.QRCodeScanner.parseRedeemCode, _G.QRCodeScanner.RedeemCodeParser);
