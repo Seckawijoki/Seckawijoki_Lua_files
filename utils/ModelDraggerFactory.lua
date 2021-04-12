@@ -1,3 +1,7 @@
+--[==[
+    根据现有UI事件分发机制封装模型拖动功能
+    Created on 2020-08-10 at 11:25:22
+]==]
 local AbsModelDragger = {
 }
 
@@ -174,17 +178,7 @@ local ModelDraggerFactory = {
 
 }
 _G.ModelDraggerFactory = ModelDraggerFactory;
---[==[
-    简述：
-        根据现有UI事件分发机制封装模型拖动功能
-    使用：
-        需在辅助按钮的4个UI注册的函数中调用适配器函数
-        1.在OnMouseDown回调中调用ModelDragger:onDragBtnMouseDown(arg1, arg2, arg3, arg4)
-        2.在OnMouseUp回调中调用ModelDragger:onDragBtnMouseUp(arg1, arg2)
-        3.在OnMouseMove回调中调用ModelDragger:onDragBtnMouseMove(arg1, arg2, arg3, arg4)
-        4.在OnHide回调中调用ModelDragger:onDragBtnHide()
-    Created on 2020-08-10 at 11:25:22
-]==]
+
 function ModelDraggerFactory:new()
     local ModelDragger = ClassesCache:obtain("ModelDragger");
 	AbsModelDragger.__index = AbsModelDragger

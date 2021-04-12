@@ -24,6 +24,7 @@ function AbsModelRotator:onRecycle()
         zAngle = 0,
     };
     self.m_bEnabled = true;
+    self.mv2 = nil;
 end
 
 --[==[
@@ -47,6 +48,15 @@ end
     必要调用
     Created on 2020-08-10 at 11:33:20
 ]==]
+function AbsModelRotator:setModelView2(mv)
+    self.mv2 = mv;
+    return self;
+end
+
+--[==[
+    必要调用
+    Created on 2020-08-10 at 11:33:20
+]==]
 function AbsModelRotator:setRotateButton(btnRotate)
     self.btnRotate = btnRotate;
     return self;
@@ -63,6 +73,14 @@ function AbsModelRotator:disable()
     return self;
 end
 
+function AbsModelRotator:setModelAngle(agSwitch, fAngleX, fAngleY, fAngleZ)
+    if self.mv then
+        self.mv:setModelAngle(agSwitch, fAngleX, fAngleY, fAngleZ)
+    end
+    if self.mv2 then
+        self.mv2:setModelAngle(agSwitch, fAngleX, fAngleY, fAngleZ)
+    end
+end
 --[==[
     适配器的组合转换接口之一
     最开始按下手指，或最开始点击鼠标左键
@@ -170,7 +188,7 @@ function AbsModelRotator:onRotateBtnMouseMove(iPressedDownX, iPressedDownY, iMou
 
 		fAngleX = fAngleX + tModelAngle.xAngle;
 		fAngleY = fAngleY + tModelAngle.yAngle;
-		mv:setModelAngle(true, fAngleX, fAngleY, tModelAngle.zAngle);
+        self:setModelAngle(true, fAngleX, fAngleY, tModelAngle.zAngle);
 		self.m_bHasRotated = true;
 	end
 
@@ -190,7 +208,7 @@ function AbsModelRotator:onRotateBtnMouseMove(iPressedDownX, iPressedDownY, iMou
     and iPressedDownY < iActorPosY + iWidth then
 		local fAngleY = (iPressedDownY - iMouseY) / 4;
 		fAngleY = fAngleY + tModelAngle.yAngle;
-		mv:setModelAngle(true, tModelAngle.xAngle, fAngleY, tModelAngle.zAngle);
+        self:setModelAngle(true, tModelAngle.xAngle, fAngleY, tModelAngle.zAngle);
 		self.m_bHasRotated = true;
     elseif self.m_bIsFingerMovedVertically == false 
     and iPressedDownX > iActorPosX - iHeight 
@@ -199,7 +217,7 @@ function AbsModelRotator:onRotateBtnMouseMove(iPressedDownX, iPressedDownY, iMou
     and iPressedDownY < iActorPosY + iWidth then
 		local fAngleX = (iPressedDownX - iMouseX)/2;
 		fAngleX = fAngleX + tModelAngle.xAngle;
-		mv:setModelAngle(true, fAngleX, tModelAngle.yAngle, tModelAngle.zAngle);
+        self:setModelAngle(true, fAngleX, tModelAngle.yAngle, tModelAngle.zAngle);
 		self.m_bHasRotated = true;
 	end
 end

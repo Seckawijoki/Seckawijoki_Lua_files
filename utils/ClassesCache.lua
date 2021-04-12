@@ -75,11 +75,19 @@ function AbsRecyclerClass:onRecycle()
 	return self;
 end
 
+--[==[
+	过滤不打印的成员。可手动避免无限递归。
+	Created on 2020-04-03 at 16:13:29
+]==]
+function AbsRecyclerClass:filterPrintMembers()
+	return nil
+end
 --[[
 	示例输出：
 	
 ]]
 function AbsRecyclerClass:toString()
+	-- local print = Android:Localize(Android.SITUATION.QRCODE_SCANNER);
 	local s = ""
 	if self.m_szClassName then
 		s = s .. self.m_szClassName .. "@" .. tostring(self) .. " = {\n"
@@ -100,9 +108,16 @@ function AbsRecyclerClass:toString()
 	-- 	class = getmetatable(class)
 	-- end
 	-- 2.递归
+	local filterPrintMembers = self:filterPrintMembers();
+	-- print("toString(): self =", tostring(self));
+	-- print("toString(): filterPrintMembers =", filterPrintMembers);
 	for k, v in pairs(class) do 
 		if k ~= "__index" and type(v) ~= "function" and type(v) ~= "userdata" then
-			s = s .. k .. " = " + v .. ",\n"
+			if filterPrintMembers and filterPrintMembers[k] then
+				s = s .. "    " .. k .. " = " .. tostring(v) .. ",\n"
+			else
+				s = s .. "    " .. k .. " = " + v .. ",\n"
+			end
 		end
 	end
 	s = s .. "},\n"
@@ -123,18 +138,12 @@ local ClassesCache = {
 	AbsRecyclerClass = AbsRecyclerClass,
 }
 _G.ClassesCache = ClassesCache
+
 --[[
-    新建可回收类
+    内部接口：缓存，并初始化缓存相关函数
 ]]
-function ClassesCache:newRecyclerClass(szClassName)
+function ClassesCache:__newRecyclerClass(szClassName)
     local RecyclerClass = {}
-    self:cache(RecyclerClass, szClassName)
-    return RecyclerClass
-end
---[[
-    缓存，并初始化缓存相关函数
-]]
-function ClassesCache:cache(RecyclerClass, szClassName)
     if not szClassName then
         szClassName = "RecyclerClass"
 	end
@@ -142,24 +151,12 @@ function ClassesCache:cache(RecyclerClass, szClassName)
 	AbsRecyclerClass.__index = AbsRecyclerClass
     RecyclerClass.m_bHasBeenRecycled = false
     RecyclerClass.m_szClassName = szClassName
-	szClassName = nil
 	setmetatable(RecyclerClass, AbsRecyclerClass)
-    -- function RecyclerClass:recycle()
-	-- 	self.m_bHasBeenRecycled = true
-	-- 	return self
-    -- end
-    -- function RecyclerClass:onRecycle()
-    --     print(self.m_szClassName .. "@" .. tostring(self) .. " has no implementation of onRecycle()")
-    --     for k, v in pairs(self) do
-    --         if type(v) ~= "function" then
-    --             self[k] = nil
-    --         end
-	-- 	end
-	-- 	return self;
-	-- end
+    return RecyclerClass
 end
+
 --[[
-    获取缓存
+    内部接口：获取缓存
     无，则返回nil
     @return class {@link table}
 ]]
@@ -187,34 +184,44 @@ function ClassesCache:getCache(szClassName)
 	end
     return class
 end
+
 --[[
     尝试获取缓存
     找不到缓存，则返回新table，并赋予可回收类的函数
+    @szClassName 类名字
+    @clsParent 如果是新类，需要继承的父类
     @return class {@link table}
     @return {@link boolean} 是否存在于缓存中
 ]]
-function ClassesCache:obtain(szClassName)
+function ClassesCache:obtain(szClassName, clsParent)
     if not szClassName then 
         print("warning: creating a class that has no names")
         return {}, false
     end
     local class = self:getCache(szClassName)
-    if class then
+	if class then
+		-- getCache中已经调用一次onRecycle
         return class, true
     end
-    class = self:newRecyclerClass(szClassName)
+    class = self:__newRecyclerClass(szClassName)
 	class.m_szClassName = szClassName
     local classArray = self.m_mClassArrayMap[szClassName]
     if not classArray then 
         classArray = {}
         self.m_mClassArrayMap[szClassName] = classArray
     end
-    classArray[#classArray + 1] = class
+	classArray[#classArray + 1] = class
+	if clsParent then
+		clsParent.__index = clsParent;
+		self:insertSuperClass(class, clsParent);
+		class:onRecycle();
+	end
     return class, false
 end
---[[
-	重新继承
-]]
+
+--[==[
+	重新继承：将parentClass插入继承关系到childClass与childClass的现有父类
+]==]
 function ClassesCache:insertSuperClass(childClass, parentClass)
 	if not parentClass then return end
 	local getmetatable = _G.getmetatable
