@@ -50,3 +50,11 @@ local szFilename = szPath:match( "([^\\]+)$" )
 print("szFilename = " + szFilename);
 -- print("szLastCharacter = " + szLastCharacter);
 -- print("iCharacterValue = " + iCharacterValue);
+
+local tab = { _name = "default" }
+setmetatable(tab, {
+    __gc = function ( t )
+      print("__gc, _name:", t._name)
+    end
+  })
+-- collectgarbage("collect") -- 强制垃圾回收
