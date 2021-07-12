@@ -7,7 +7,7 @@ local CmdUtils = _G.CmdUtils
 local System = _G.System
 
 local FileUtils = {
-    FILE_SEPERATOR = System.FILE_SEPERATOR,
+    FILE_SEPARATOR = System.FILE_SEPARATOR,
 }
 _G.FileUtils = FileUtils;
 
@@ -150,8 +150,8 @@ function FileUtils:mkdir(szPath)
     if szPath == "" then
         return false
     end
-    local FILE_SEPERATOR = self.FILE_SEPERATOR;
-    local index = szPath:find(FILE_SEPERATOR, 1, true)
+    local FILE_SEPARATOR = self.FILE_SEPARATOR;
+    local index = szPath:find(FILE_SEPARATOR, 1, true)
     -- print("FileUtils:mkdir(): index = " + index);
     if not index then
         if not self:isDirectoryExist(szPath) then
@@ -182,7 +182,7 @@ function FileUtils:mkdir(szPath)
             end
         end
         lastIndex = index
-        index = szPath:find(FILE_SEPERATOR, lastIndex + 1, true)
+        index = szPath:find(FILE_SEPARATOR, lastIndex + 1, true)
     end
     return hasCreated;
 end
@@ -214,12 +214,12 @@ function FileUtils:getFilename(szPath)
     if not szPath then
         return "";
     end
-    -- local FILE_SEPERATOR = self.FILE_SEPERATOR;
-    -- local index = szPath:find(FILE_SEPERATOR, 0, true);
+    -- local FILE_SEPARATOR = self.FILE_SEPARATOR;
+    -- local index = szPath:find(FILE_SEPARATOR, 0, true);
     -- local previousIndex;
     -- while index do
     --     previousIndex = index;
-    --     index = szPath:find(FILE_SEPERATOR, 0, true);
+    --     index = szPath:find(FILE_SEPARATOR, 0, true);
     -- end
     -- local szFilename
     -- if previousIndex then
@@ -228,14 +228,14 @@ function FileUtils:getFilename(szPath)
     --     szFilename = ""
     -- end
     -- return szFilename;
-    return szPath:match( "([^" + self.FILE_SEPERATOR + "]+)$" )
+    return szPath:match( "([^" + self.FILE_SEPARATOR + "]+)$" )
 end
 
 function FileUtils:getParentPath(szPath)
     if not szPath then
         return "";
     end
-    local pattern = "^(.+)" + self.FILE_SEPERATOR
+    local pattern = "^(.+)" + self.FILE_SEPARATOR
     return string.match(szPath, pattern)
 end
 
@@ -269,8 +269,8 @@ function FileUtils:getConcisePath(szPath)
     if not szPath then
         return "";
     end
-    szPath = szPath:gsub("[^%.]%.%" + System.FILE_SEPERATOR, "");
-    szPath = szPath:gsub("%" + System.FILE_SEPERATOR + "%.[^%.]", "");
+    szPath = szPath:gsub("[^%.]%.%" + System.FILE_SEPARATOR, "");
+    szPath = szPath:gsub("%" + System.FILE_SEPARATOR + "%.[^%.]", "");
     local left, right = szPath:find("..", 0, true);
     print("FileUtils:getConcisePath(): szPath = " + szPath);
     print("FileUtils:getConcisePath(): #szPath = " + #szPath);
@@ -279,7 +279,7 @@ function FileUtils:getConcisePath(szPath)
     if not left or left <= 2 then
         return szPath
     end
-    local before = szPath:find("%" + System.FILE_SEPERATOR, 0, left-1);
+    local before = szPath:find("%" + System.FILE_SEPARATOR, 0, left-1);
     print("FileUtils:getConcisePath(): before = " + before);
     local szConcisePath = szPath:sub(1, before) + szPath:sub(right+1);
     print("FileUtils:getConcisePath(): szConcisePath = " + szConcisePath);

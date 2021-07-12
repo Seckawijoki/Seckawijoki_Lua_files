@@ -48,7 +48,7 @@ end
 --------------------------------------------------------------------------------------
 local Linux = {
     NAME = "Linux",
-    FILE_SEPERATOR = "/",
+    FILE_SEPARATOR = "/",
 }
 ClassesCache:insertSuperClass(Linux, ISystem);
 function Linux:getPath(szPath)
@@ -76,7 +76,7 @@ end
 --------------------------------------------------------------------------------------
 local Windows = {
     NAME = "Windows",
-    FILE_SEPERATOR = "\\",
+    FILE_SEPARATOR = "\\",
 }
 ClassesCache:insertSuperClass(Windows, ISystem);
 
@@ -106,7 +106,7 @@ end
 --------------------------------------------------------------------------------------
 local OSUtils = {
     CUR_OS = "",
-    FILE_SEPERATOR = "",
+    FILE_SEPARATOR = "",
 }
 _G.OSUtils = OSUtils;
 
@@ -134,7 +134,7 @@ function OSUtils:init()
     end
     if System then
         self.CUR_OS = System.NAME;
-        self.FILE_SEPERATOR = System.FILE_SEPERATOR;
+        self.FILE_SEPARATOR = System.FILE_SEPARATOR;
     end
     _G.System = System;
 end

@@ -175,6 +175,11 @@ function UIUpdateTimer:onUpdate(interval)
 		self.m_bIsDelayFinished = true;
 	end
 
+	local listener = self.m_clsOnTimerListener
+	if listener.onTimerStart then
+		listener:onTimerStart(self)
+	end
+
 	self.m_bHasStarted = true;
 	
 	if self.m_bIsRealWorldTimeMode then
@@ -182,9 +187,9 @@ function UIUpdateTimer:onUpdate(interval)
 		interval = interval * self.REAL_WORLD_TIME_FACTOR
 	end
 
+	fCurTime = fCurTime + interval;
 	local fTrueCurTime = fCurTime - self.m_fDelayTime;
 
-	local listener = self.m_clsOnTimerListener
 	if listener then
 		if listener.onTimerUpdate then
 			local percentage = fTrueCurTime / self.m_fTotalSeconds;
@@ -192,10 +197,12 @@ function UIUpdateTimer:onUpdate(interval)
 				percentage = 1
 			end
 			-- 回调百分比小数
-			-- if self.m_bDebug then
-			-- 	print("onUpdate(): ", self.m_bIsDelayFinished, self.m_fDelayTime, self.m_fTotalSeconds, fCurTime, fTrueCurTime, percentage);
-			-- end
 			listener:onTimerUpdate(self, percentage)
+
+			-- if self.m_bDebug then
+				-- print("onUpdate(): ", self.m_bIsDelayFinished, self.m_fDelayTime, self.m_fTotalSeconds, fCurTime, fTrueCurTime, percentage);
+				-- print("onUpdate(): " + string.format("%2.2f(%2.2f)/%2.2f", fCurTime, fTrueCurTime, self.m_fTotalSeconds) + " | " + percentage);
+			-- end
 		end
 
 		-- 更新从0开始。到达第一秒的时间比实际偏短
@@ -207,8 +214,6 @@ function UIUpdateTimer:onUpdate(interval)
 	
 
 	-- local iCurCount = self.m_iCurCount
-	fCurTime = fCurTime + interval;
-	fTrueCurTime = fTrueCurTime + interval;
     if fTrueCurTime >= self.m_fTotalSeconds then
         self:stop();
 		return
@@ -256,8 +261,12 @@ end
 function UIUpdateTimer:stop()
     self.m_bHasStarted = false
     self.m_bIsRunning = false
-	if self.m_clsOnTimerListener then
-		self.m_clsOnTimerListener:onTimerFinish(self);
+
+	local listener = self.m_clsOnTimerListener;
+	if listener then
+		if listener.onTimerFinish then
+		    listener:onTimerFinish(self);
+		end
 	end
 end
 
@@ -281,9 +290,16 @@ end
 	终止，不回调
 	Created on 2020-09-11 at 17:23:48
 ]==]
-function UIUpdateTimer:terminate()
+function UIUpdateTimer:cancel()
     self.m_bHasStarted = false
     self.m_bIsRunning = false
+
+	local listener = self.m_clsOnTimerListener;
+	if listener then
+		if listener.onTimerCancel then
+			listener:onTimerCancel(self)
+		end
+	end
 end
 
 function UIUpdateTimer:getTime()
@@ -315,6 +331,158 @@ function UIUpdateTimer:setRealWorldTimeMode(isRealWorldTimeMode)
 	return self;
 end
 --------------------------------------------------------UIUpdateTimer end----------------------------------------------------------
+--------------------------------------------------------UIUpdateTicker start----------------------------------------------------------
+--[==[
+	根据UI底层的OnUpdate的更新频率计次
+	Created on 2021-04-13 at 17:01:58
+]==]
+local UIUpdateTicker = {
+}
+
+function UIUpdateTicker:onRecycle()
+	self.m_bDebug = false;
+	self.m_bIsRunning = false
+	self.m_bHasStarted = false
+    self.m_iCurTick = 0
+    self.m_iTotalTicks = 0
+	self.m_clsOnTickListener = nil
+	self.m_iDelayTick = 0
+	self.m_bIsDelayFinished = true
+end
+
+--[==[
+    一秒钟调用3次，仅UI显示时调用
+    Created on 2020-09-05 at 15:46:23
+]==]
+function UIUpdateTicker:onUpdate()
+    if not self.m_bIsRunning then
+        return
+	end
+	
+	local iCurTick = self.m_iCurTick
+	if self.m_iDelayTick > 0 and not self.m_bIsDelayFinished then
+		if iCurTick <= self.m_iDelayTick then
+			iCurTick = iCurTick + 1;
+			self.m_iCurTick = iCurTick;
+			return
+		end
+		self.m_bIsDelayFinished = true;
+	end
+
+	local listener = self.m_clsOnTickListener
+	if listener.onTickStart then
+		listener:onTickStart(self)
+	end
+
+	self.m_bHasStarted = true;
+
+	local iTrueCurTick = iCurTick - self.m_iDelayTick;
+
+	if listener then
+		if listener.onTickUpdate then
+			local percentage = iTrueCurTick / self.m_iTotalTicks;
+			if percentage > 1 then
+				percentage = 1
+			end
+			-- 回调百分比小数
+			-- if self.m_bDebug then
+			-- 	print("onUpdate(): ", self.m_bIsDelayFinished, self.m_iDelayTick, self.m_iTotalTicks, iCurTick, iTrueCurTick, percentage);
+			-- end
+			listener:onTickUpdate(self, percentage)
+		end
+	end
+	
+
+	iCurTick = iCurTick + 1;
+	iTrueCurTick = iTrueCurTick + 1;
+    if iTrueCurTick >= self.m_iTotalTicks then
+        self:stop();
+		return
+	end
+
+    self.m_iCurTick = iCurTick;
+end
+
+function UIUpdateTicker:debug(enable)
+	self.m_bDebug = enable
+	return self;
+end
+
+function UIUpdateTicker:setOnTickListener(onTickListener)
+	self.m_clsOnTickListener = onTickListener
+	return self;
+end
+
+--[==[
+	开始
+	Created on 2020-09-07 at 14:40:11
+]==]
+function UIUpdateTicker:delay(iTicks)
+	self.m_iDelayTick = iTicks
+	return self;
+end
+
+--[==[
+	开始
+	Created on 2020-09-07 at 14:40:11
+]==]
+function UIUpdateTicker:start(iTicks)
+    self.m_iTotalTicks = iTicks
+    self.m_iCurTick = 0
+    -- self.m_iCurCount = 0
+    self.m_bIsRunning = true
+	self.m_bIsDelayFinished = self.m_iDelayTick <= 0 and true or false
+end
+
+--[==[
+	停止
+	Created on 2020-09-07 at 14:40:21
+]==]
+function UIUpdateTicker:stop()
+    self.m_bHasStarted = false
+    self.m_bIsRunning = false
+	if self.m_clsOnTickListener then
+		self.m_clsOnTickListener:onTickFinish(self);
+	end
+end
+
+--[==[
+	暂停
+	Created on 2020-09-07 at 14:40:02
+]==]
+function UIUpdateTicker:pause()
+	self.m_bIsRunning = false
+end
+
+--[==[
+	恢复
+	Created on 2020-09-07 at 14:39:56
+]==]
+function UIUpdateTicker:resume()
+	self.m_bIsRunning = true
+end
+
+--[==[
+	终止，不回调
+	Created on 2020-09-11 at 17:23:48
+]==]
+function UIUpdateTicker:cancel()
+    self.m_bHasStarted = false
+    self.m_bIsRunning = false
+end
+
+function UIUpdateTicker:getTick()
+    return self.m_iCurTick - self.m_iDelayTick;
+end
+
+--[==[
+	是否开始计时
+	Created on 2020-09-07 at 14:44:40
+]==]
+function UIUpdateTicker:hasStarted()
+	return self.m_bHasStarted;
+end
+--------------------------------------------------------UIUpdateTicker end----------------------------------------------------------
 --------------------------------------------------------ThreadPoolTimer start----------------------------------------------------------
 --[==[
 	使用封装的threadpool:work新建协程进行计时，可设置不同的更新间隔
@@ -419,7 +587,7 @@ end
 	终止，不回调
 	Created on 2020-09-11 at 17:23:48
 ]==]
-function ThreadPoolTimer:terminate()
+function ThreadPoolTimer:cancel()
     self.m_bHasStarted = false
     self.m_bIsRunning = false
 end
@@ -477,6 +645,7 @@ end
 	使用说明：
 	1.使用UIUpdateTimer:setOnTimerListener(listener)注册回调类listener
 	2.回调类listener中需包含下面三个函数，参数Timer可识别为不同的计时器：
+		onTimerStart = function(self, Timer)end -- 可选，计时开始
 		onTimerUpdateSecond = function(self, Timer, iCurSeconds)end -- 可选，根据秒数回调，大致一秒3次
 		onTimerUpdate = function(self, Timer, percentage)end -- 可选，按百分比回调
 		onTimerFinish = function(self, Timer)end -- 可选，结束时回调
@@ -489,6 +658,26 @@ end
 ]==]
 function TimerFactory:newUIUpdateTimer()
 	return ClassesCache:obtain("UIUpdateTimer", UIUpdateTimer)
+end
+
+--[==[
+	简述：
+		从OnUpdate中分发回调，处理百分比以及计时结束回调
+	使用说明：
+	1.使用UIUpdateTicker:setOnTickListener(listener)注册回调类listener
+	2.回调类listener中需包含下面三个函数，参数Timer可识别为不同的计时器：
+		onTickStart = function(self, Timer)end -- 可选，计时开始
+		onTickUpdate = function(self, Timer, percentage)end -- 可选，按百分比回调
+		onTickFinish = function(self, Timer)end -- 可选，结束时回调
+	3.使用UIUpdateTicker:start(second)开始计时
+	4.使用UIUpdateTicker:stop()结束计时
+	5.使用UIUpdateTicker:pause()暂停计时
+	6.使用UIUpdateTicker:resume()恢复计时
+	7.将UI底层回调的OnUpdate中调用使用UIUpdateTicker:onUpdate()来计时
+	Created on 2021-04-13 at 17:02:08
+]==]
+function TimerFactory:newUIUpdateTicker()
+	return ClassesCache:obtain("UIUpdateTicker", UIUpdateTicker)
 end
 
 --[==[
