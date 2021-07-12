@@ -214,20 +214,29 @@ function FileUtils:getFilename(szPath)
     if not szPath then
         return "";
     end
-    local FILE_SEPERATOR = self.FILE_SEPERATOR;
-    local index = szPath:find(FILE_SEPERATOR, 0, true);
-    local previousIndex;
-    while index do
-        previousIndex = index;
-        index = szPath:find(FILE_SEPERATOR, 0, true);
+    -- local FILE_SEPERATOR = self.FILE_SEPERATOR;
+    -- local index = szPath:find(FILE_SEPERATOR, 0, true);
+    -- local previousIndex;
+    -- while index do
+    --     previousIndex = index;
+    --     index = szPath:find(FILE_SEPERATOR, 0, true);
+    -- end
+    -- local szFilename
+    -- if previousIndex then
+    --     szFilename = szPath:sub(previousIndex + 1);
+    -- else
+    --     szFilename = ""
+    -- end
+    -- return szFilename;
+    return szPath:match( "([^" + self.FILE_SEPERATOR + "]+)$" )
+end
+
+function FileUtils:getParentPath(szPath)
+    if not szPath then
+        return "";
     end
-    local szFilename
-    if previousIndex then
-        szFilename = szPath:sub(previousIndex + 1);
-    else
-        szFilename = ""
-    end
-    return szFilename;
+    local pattern = "^(.+)" + self.FILE_SEPERATOR
+    return string.match(szPath, pattern)
 end
 
 --[==[

@@ -53,21 +53,7 @@ end
 ]==]
 function LuaUtils:setPrintToConsole()
     _G.print = function(...)
-        local t = {...}
-        local a = {}
-        for i=1, #t do 
-            if type(t[i]) == "table" then
-                a[i] = self:table2String(t[i])
-            else
-                a[i] = tostring(t[i])
-            end
-        end
-        if #a <= 0 then
-            io.write("nil\n")
-        else
-            io.write(unpack(a), "\n");
-        end
-        -- io.write(..., "\n");
+        io.write(..., "\n");
         io.flush();
     end
 end
